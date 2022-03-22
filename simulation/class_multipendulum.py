@@ -3,6 +3,16 @@ import numpy as np
 
 import time
 
+def list_to_str(my_list, unit_str = '', separation_str = ', '):
+    if unit_str != '':
+        unit_str = " " + unit_str
+    output = ""
+    for i in range(len(my_list) - 1):
+        output += str(my_list[i]) + unit_str + separation_str
+    output += str(my_list[-1]) + unit_str
+    return(output)
+    
+
 def tree_access(tree, index_list, make_copy = True):
     if make_copy:
         tree_c = tree.copy()
@@ -19,6 +29,29 @@ def minor(square_matrix, my_x, my_y):
             continue
         res_matrix.append(square_matrix[i][:my_y - 1] + square_matrix[i][my_y:])
     return(res_matrix)
+
+def max_item(my_list):
+    if type(my_list) == dict:
+        assigned = False
+        max_val = max_key = 0
+        for key, item in df.items():
+            if assigned == False:
+                assigned = True
+                max_key = key
+                max_val = item
+            if item > max_val:
+                max_val = item
+                max_key = key
+        return(max_key, max_val)
+    if type(my_list) == list or type(my_list) == np.ndarray:
+        max_val = my_list[0]
+        max_i   = 0
+        for i in range(len(my_list)):
+            if my_list[i] > max_val:
+                max_i = i
+                max_val = my_list[i]
+        return(max_i, max_val)
+    #my_list = list(my
 
 
 class dict_tree:
@@ -86,9 +119,22 @@ class multipendulum(physical_system):
         
         # optimization functors
         #self.M_functor
+    
+    
+    def parameter_description(self):
+        # first line is gravity and number of segments
+        # second line is length of segments
+        # third line is segment masses
+        line1 = "g = %0.2f, N = %i" % (self.g, self.N)
+        line2 = "segments:"
+        line3 = "masses:  "
+        for i in range(self.N):
+            line2 += " l_%i = %0.2f," % (i, self.l[i])
+            line3 += " m_%i = %0.2f," % (i, self.m[i])
+        return([line1, line2[:-1], line3[:-1]])
 
     
-    # --------------- physical methods ------------------------
+    # --------------- manipulation methods ------------------------
     
     def random_state(self, interval = 1):
         self.theta     = np.random.rand(self.N) * interval
@@ -101,6 +147,26 @@ class multipendulum(physical_system):
     def set_state(self, new_theta, new_theta_dot):
         self.theta     = np.array(new_theta    )
         self.theta_dot = np.array(new_theta_dot)
+    
+    # --------------- physical methods ------------------------
+    
+    def get_total_energy(self):
+        # we ignore the driving force potential, as it is technically not a potential
+        U_g = 0.0
+        T = 0.0
+        for i in range(self.N):
+            U_g_ps = 0.0
+            T_ps_1 = 0.0
+            T_ps_2 = 0.0
+            for j in range(0, i+1):
+                U_g_ps += self.l[j] * np.cos(self.theta[j])
+                T_ps_1 += self.theta_dot[j] * self.l[j] * np.cos(self.theta[j])
+                T_ps_2 += self.theta_dot[j] * self.l[j] * np.sin(self.theta[j])
+            U_g -= self.m[i] * U_g_ps
+            T   += 0.5 * self.m[i] * (T_ps_1 * T_ps_1 + T_ps_2 * T_ps_2)
+        U_g *= self.g
+        return(T, U_g, T+U_g)
+
     
     def get_mu(self, a, b):
         mu = 0
@@ -160,6 +226,54 @@ class multipendulum(physical_system):
         for n in range(self.N):
             acceleration.append( self.get_det_modified_M(n, external_force) / (self.l[n] * det_M) )
         return(acceleration)
+    
+    
+    def step(self, dt, cur_external_force_list):
+        
+        # cur external force list is a list of exteral forces at time t, t+dt/2 and t+dt
+        
+        old_theta     = self.theta
+        old_theta_dot = self.theta_dot
+            
+            
+        k1_theta     = []
+        k1_theta_dot = []
+        acc_1 = self.get_acceleration(cur_external_force_list[0])
+        for i in range(self.N):
+            k1_theta.append(     dt * self.theta_dot[i] )
+            k1_theta_dot.append( dt * acc_1[i]              )
+        self.theta     = old_theta     + np.array(k1_theta)      / 2.0
+        self.theta_dot = old_theta_dot + np.array(k1_theta_dot)  / 2.0
+            
+        k2_theta     = []
+        k2_theta_dot = []
+        acc_2 = self.get_acceleration(cur_external_force_list[1])
+        for i in range(self.N):
+            k2_theta.append(     dt * self.theta_dot[i] )
+            k2_theta_dot.append( dt * acc_2[i]              )
+        self.theta     = old_theta     + np.array(k2_theta)      / 2.0
+        self.theta_dot = old_theta_dot + np.array(k2_theta_dot)  / 2.0
+            
+        k3_theta     = []
+        k3_theta_dot = []
+        acc_3 = self.get_acceleration(cur_external_force_list[1])
+        for i in range(self.N):
+            k3_theta.append(     dt * self.theta_dot[i] )
+            k3_theta_dot.append( dt * acc_3[i]              )
+        self.theta     = old_theta     + np.array(k3_theta)
+        self.theta_dot = old_theta_dot + np.array(k3_theta_dot)
+            
+        k4_theta     = []
+        k4_theta_dot = []
+        acc_4 = self.get_acceleration(cur_external_force_list[2])
+        for i in range(self.N):
+            k4_theta.append(     dt * self.theta_dot[i] )
+            k4_theta_dot.append( dt * acc_4[i]              )
+            
+        #print("huehue", (np.array(k1_theta)     + 2.0*np.array(k2_theta)     + 2.0*np.array(k3_theta)     + np.array(k4_theta)    )/6.0)
+            
+        self.theta     = old_theta     + (np.array(k1_theta)     + 2.0*np.array(k2_theta)     + 2.0*np.array(k3_theta)     + np.array(k4_theta)    )/6.0
+        self.theta_dot = old_theta_dot + (np.array(k1_theta_dot) + 2.0*np.array(k2_theta_dot) + 2.0*np.array(k3_theta_dot) + np.array(k4_theta_dot))/6.0
     
     
     # ----------------- optimization methods -----------------
