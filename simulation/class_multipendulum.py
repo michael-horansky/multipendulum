@@ -11,7 +11,36 @@ def list_to_str(my_list, unit_str = '', separation_str = ', '):
         output += str(my_list[i]) + unit_str + separation_str
     output += str(my_list[-1]) + unit_str
     return(output)
-    
+
+def empty_list_list(length):
+    result = []
+    for i in range(length):
+        result.append([])
+    return(result)
+
+def nonzero_sign(x):
+    if type(x) == list or type(x) == np.ndarray:
+        result = np.zeros(len(x))
+        for i in range(len(x)):
+            result[i] = nonzero_sign(x[i])
+        return(result)
+    if x >= 0.0:
+        return(1)
+    else:
+        return(-1)
+
+def base_angle(x):
+    if type(x) == list or type(x) == np.ndarray:
+        result = np.zeros(len(x))
+        for i in range(len(x)):
+            result[i] = base_angle(x[i])
+        return(result)
+    res = x
+    while res <= - np.pi:
+        res += 2.0 * np.pi
+    while res > np.pi:
+        res -= 2.0 * np.pi
+    return(res)
 
 def tree_access(tree, index_list, make_copy = True):
     if make_copy:
@@ -117,6 +146,8 @@ class multipendulum(physical_system):
         self.theta     = np.zeros(self.N)
         self.theta_dot = np.zeros(self.N)
         
+        self.phi       = np.zeros(self.N)
+        
         # optimization functors
         #self.M_functor
     
@@ -173,6 +204,11 @@ class multipendulum(physical_system):
         for i in range(max(a, b), self.N):
             mu += self.m[i]
         return(mu)
+    
+    def get_phi(self):
+        self.phi[0] = self.theta[0]
+        for i in range(1, self.N):
+            self.phi[i] = self.theta[i] - self.theta[i-1]
     
     def get_M(self):
         M = []

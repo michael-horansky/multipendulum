@@ -3,6 +3,10 @@
 
 from class_analyzer import *
 
+# plotting presets
+ang_f_analysis_preset = ['avg_E_graph', 'ang_f_theta_graph', 'ang_f_theta_space', 'hp_theta_std_graph', 'ang_f_phi_graph', 'ang_f_phi_space', 'hp_phi_std_graph']
+
+
 
 my_analyzer = analyzer(0.01, 1.0, 0.0)
 
@@ -10,6 +14,7 @@ jarek_N = 5
 
 
 p2_small = multipendulum([5.0, 3.0], [5.0, 3.0], 9.8)
+p2_333   = multipendulum([5.0, 5.0], [5.0, 5.0], 9.8)
 p3_small = multipendulum([5.0, 3.0, 3.0], [5.0, 3.0, 3.0], 9.8)
 
 
@@ -18,27 +23,35 @@ energy_vs_amplitude = analyzer(0.01, 1.0, 2.5)
 #energy_vs_amplitude.add_pendulum(p2_small, "double-pendulum")
 energy_vs_amplitude.add_pendulum(p3_small, "triple-pendulum")
 
-#energy_vs_amplitude.driving_frequency_analysis(driving_frequency_range=(0.0, 4.0), t_max = 50.0, t_threshold=20.0)
-#energy_vs_amplitude.plot_resonance_analysis_data(['max_theta_1_graph', 'avg_E_graph', 'avg_E_ratio_graph'])
+#energy_vs_amplitude.driving_frequency_analysis(driving_frequency_range=(0.1, 4.0), t_max = 100.0, t_threshold=50.0)
+"""
+energy_vs_amplitude.driving_frequency_analysis(driving_frequency_range=(2.0, 2.6), datapoints = 200, t_max = 200.0, t_threshold=100.0)
+energy_vs_amplitude.save_resonance_analysis_data("middle_freq_zoom")
+energy_vs_amplitude.plot_resonance_analysis_data()"""
 
-resonant_frequencies = [1.065326633165829, 2.170854271356784, 3.5376884422110555]
+p3_small.random_state(np.pi)
+energy_vs_amplitude.animate(50.0, 40.0)
 
-#for resonant_frequency in energy_vs_amplitude.resonant_frequencies[0]:
-for resonant_frequency in resonant_frequencies:
+#resonant_frequencies = [1.065326633165829, 2.170854271356784, 3.5376884422110555]
+#resonant frequencies = [1.0603015075376885, 2.1404522613065327, 2.2384422110552764, 3.549246231155779]
+"""
+for resonant_frequency in energy_vs_amplitude.resonant_frequencies[0]:
+#for resonant_frequency in resonant_frequencies:
     energy_vs_amplitude.omega_F = resonant_frequency
     energy_vs_amplitude.animate(160.0, 150.0)
-
+"""
 
 """
 double_pendulum_resonance = analyzer(0.01, 1.0, 2.5)
 
-double_pendulum_resonance.add_pendulum(p2_small, "p_small")
+double_pendulum_resonance.add_pendulum(p2_333, "p_333")
 
-#double_pendulum_resonance.driving_frequency_analysis((0.0, 2.5))
 #double_pendulum_resonance.driving_frequency_analysis(driving_frequency_range=(0.0, 4.0), t_max = 100.0, t_threshold=20.0)
-double_pendulum_resonance.driving_frequency_analysis(driving_frequency_range=(0.0, 4.0), t_max = 15.0, t_threshold=5.0)
-double_pendulum_resonance.plot_resonance_analysis_data(['max_theta_1_graph', 'avg_E_graph', 'avg_E_ratio_graph'])
-
+#double_pendulum_resonance.driving_frequency_analysis(driving_frequency_range=(0.1, 4.0), datapoints = 10, t_max = 50.0, t_threshold=20.0)
+double_pendulum_resonance.load_resonance_analysis_data()
+double_pendulum_resonance.plot_resonance_analysis_data()
+"""
+"""
 for resonant_frequency in double_pendulum_resonance.resonant_frequencies[0]:
     double_pendulum_resonance.omega_F = resonant_frequency
     double_pendulum_resonance.animate(50.0, 40.0)
