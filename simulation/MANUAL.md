@@ -22,6 +22,8 @@ First, you create any amount of analyzers as instances of the _analyzer_ class. 
 3. my_external_force_amplitude (float): the *default value* of the driving force amplitude.
 The default values will be used in other methods called for this instance if a different value isn't specified.
 
+### Manual population
+
 Second, you create the pendulums in the experiment as instances of the _multipendulum_ class. The constructor takes 3 parameters:
 1. my_l (array): list of lengths of the segments. The constructor will infer the amount of segments N from the length of this list.
 2. my_m (array): list of masses of the nodes.
@@ -31,13 +33,13 @@ Now you add the pendulums to the analyzers they belong to, by calling the analyz
 1. pendulum (multipendulum): the instance of _multipendulum_ you're adding.
 2. pendulum_name (string) [optional]: the name of the pendulum, used to mark it on plots and in filenames of exported data. If unspecified, the name will be "pendulum_#", where # is the current amount of pendulums added to the analyzer, which increments by 1 with each time this method's called.
 
+### Automatic parameter-space population
+
 Alternatively, you can skip the pendulum creation and addition and call the analyzer's method populate_parameter_space. This method creates a population of pendulums whose parameters l, m, g span the ranges provided. This method takes 4 parameters:
 1. l_space (array of tuples or floats): list of tuples of length N, where the i-th element is a tuple in the form (start, end, amount[, pivot=0]), where _start_ is the lower boundary on the value of l_i, _end_ is the upper boundary, and _amount_ is the number of values we consider on this interval. If a single number is presented instead of the tuple, then l_i only takes this value and doesn't vary in the population. If pivot_expansion is flagged, then _pivot_ marks the index of the pivot value in the produced linspace.
 2. m_space (array of tuples or floats): the same as l_space, but for masses of the nodes, so the i-th element describes the space of m_i.
 3. g_space (tuple or float): if a tuple in the form (start, end, amount[, pivot=0]), g will take values from _start_ to _end_ with _amount_ datapoints. If a float, g always takes the value of the float. If pivot_expansion is flagged, _pivot_ marks the index of the pivot value in the produced linspace.
 4. pivot_expansion (bool) [optional, False by default]: If false, the population will include all possible configurations given by the parameter spaces. If true, only configurations in which all values except one are equal to their respective pivot values are considered (so only one parameter is being varied at a time, which saves computational time and space greatly). If flagged true, _pivot_ takes the default value of 0 for each element unless specified different.
-
-### Default values
 
 ## Generating data
 
