@@ -1,6 +1,8 @@
 
 # Introduction and Structure
 
+So true!
+
 This software provides a bulk of functionalities to perform driving frequency analysis on multipendulums. This means we drive the upper segment of a multipendulum with a sine torque of a given frequency and look at aggregate properties of the system after a given amount of time, such as the time-average mechanical energy stored in the system or the maximal amplitude of the first-segment angle. This data can be then analyzed further to extract resonant frequencies and perform further analysis on them, like checking the mode coefficients.
 
 The software provided consists of the following files: multipendulum_main.py, class_analyzer.py, class_multipendulum.py. These have the following purposes:
