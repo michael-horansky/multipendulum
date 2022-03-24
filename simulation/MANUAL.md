@@ -1,8 +1,6 @@
 
 # Introduction and Structure
 
-So true!
-
 This software provides a bulk of functionalities to perform driving frequency analysis on multipendulums. This means we drive the upper segment of a multipendulum with a sine torque of a given frequency and look at aggregate properties of the system after a given amount of time, such as the time-average mechanical energy stored in the system or the maximal amplitude of the first-segment angle. This data can be then analyzed further to extract resonant frequencies and perform further analysis on them, like checking the mode coefficients.
 
 The software provided consists of the following files: multipendulum_main.py, class_analyzer.py, class_multipendulum.py. These have the following purposes:
@@ -12,12 +10,24 @@ The software provided consists of the following files: multipendulum_main.py, cl
 
 These files link to each other as listed above in a descending order. You need to place these files in a single folder to run the program. Then run multipendulum_main.py in the environment of your choice.
 
-
 # Conducting an Experiment
 
-An 'experiment' is a driving frequency analysis conducted on a specified population of multipendulums on a specified range of frequencies.
+An 'experiment' is a driving frequency analysis conducted on a specified population of multipendulums on a specified range of frequencies. First you need to set up the experiment's configuration, then run it, and finally, use the data.
 
 ## Setting up the configuration
+
+First, you create the analyzer as an instance of the _analyzer_ class. The constructor takes 3 parameters:
+1. my_dt (float): the step used in numerical integration, of dimension [s]
+2. my_omega_F (float): the *default value* of the driving force angular frequency.
+3. my_external_force_amplitude (float): the *default value* of the driving force amplitude.
+The default values will be used in other methods called for this instance if a different value isn't specified.
+
+Second, you create the pendulums in the experiment as instances of the _multipendulum_ class. The constructor takes 3 parameters:
+1. my_l (array): list of lengths of the segments. The constructor will infer the amount of segments from the length of this list.
+2. my_m (array): list of masses of the nodes.
+3. my_g (float): the gravitational acceleration acting on the multipendulum.
+
+
 Pendulum names :)
 ### Default values
 
