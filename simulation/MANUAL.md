@@ -16,7 +16,7 @@ An 'experiment' is a set of driving frequency analyses conducted on a specified 
 
 ## Setting up the configuration
 
-First, you create any amount of analyzers as instances of the _analyzer_ class. The constructor takes 3 parameters:
+First, you create any amount of analyzers as instances of the _analyzer_ class. The constructor takes 3 arguments:
 1. my_dt (float): the step used in numerical integration, of dimension [s]
 2. my_omega_F (float): the *default value* of the driving force angular frequency.
 3. my_external_force_amplitude (float): the *default value* of the driving force amplitude.
@@ -24,18 +24,18 @@ The default values will be used in other methods called for this instance if a d
 
 ### Manual population
 
-Second, you create the pendulums in the experiment as instances of the _multipendulum_ class. The constructor takes 3 parameters:
+Second, you create the pendulums in the experiment as instances of the _multipendulum_ class. The constructor takes 3 arguments:
 1. my_l (array): list of lengths of the segments. The constructor will infer the amount of segments N from the length of this list.
 2. my_m (array): list of masses of the nodes.
 3. my_g (float): the gravitational acceleration acting on the multipendulum.
 
-Now you add the pendulums to the analyzers they belong to, by calling the analyzers' method add_pendulum. This method takes two parameters:
+Now you add the pendulums to the analyzers they belong to, by calling the analyzers' method add_pendulum. This method takes 2 arguments:
 1. pendulum (multipendulum): the instance of _multipendulum_ you're adding.
 2. pendulum_name (string) [optional]: the name of the pendulum, used to mark it on plots and in filenames of exported data. If unspecified, the name will be "pendulum_#", where # is the current amount of pendulums added to the analyzer, which increments by 1 with each time this method's called.
 
 ### Automatic parameter-space population
 
-Alternatively, you can skip the pendulum creation and addition and call the analyzer's method populate_parameter_space. This method creates a population of pendulums whose parameters l, m, g span the ranges provided. This method takes 4 parameters:
+Alternatively, you can skip the pendulum creation and addition and call the analyzer's method populate_parameter_space. This method creates a population of pendulums whose parameters l, m, g span the ranges provided. This method takes 4 arguments:
 1. l_space (array of tuples or floats): list of tuples of length N, where the i-th element is a tuple in the form (start, end, amount[, pivot=0]), where _start_ is the lower boundary on the value of l_i, _end_ is the upper boundary, and _amount_ is the number of values we consider on this interval. If a single number is presented instead of the tuple, then l_i only takes this value and doesn't vary in the population. If pivot_expansion is flagged, then _pivot_ marks the index of the pivot value in the produced linspace.
 2. m_space (array of tuples or floats): the same as l_space, but for masses of the nodes, so the i-th element describes the space of m_i.
 3. g_space (tuple or float): if a tuple in the form (start, end, amount[, pivot=0]), g will take values from _start_ to _end_ with _amount_ datapoints. If a float, g always takes the value of the float. If pivot_expansion is flagged, _pivot_ marks the index of the pivot value in the produced linspace.
@@ -43,11 +43,25 @@ Alternatively, you can skip the pendulum creation and addition and call the anal
 
 ## Generating data
 
-To perform the driving frequency analysis itself, call the analyzer's method driving_frequency_analysis. This takes 5 parameters:
+To perform the driving frequency analysis itself, call the analyzer's method driving_frequency_analysis. This takes 5 arguments:
 1. driving_frequency_range (tuple): Specifies the range of frequencies of the external force. Is in the form (lower_bound, upper_bound)
-2. cur_external_force_amplitude (float) [optional]: Amplitude of the driving force in N (the driving torque is then l_1\*F). If unspecified, it takes the default value given in the constructor of the _analyzer_.
+2. cur_external_force_amplitude (float) [optional]: Amplitude of the driving force in [N] (the driving torque is then l_1\*F). If unspecified, it takes the default value given in the constructor of the _analyzer_.
+3. datapoints (int): Number of datapoints for the analysis. The program will iterate through values of omega_F from a linspace given by _driving_frequency_range_ and this value.
+4. t_max (float): The value of simulation time at which it terminates for each datapoint, in [s].
+5. t_threshold (float): The value of simulation time at which the aggregate data start being recorded. This is to exclude transient behaviour from the collected data.
+
+This method stores the aggregate data for each pendulum in the list _pendulum_resonance_analysis_data_, and also perform a peak search that finds the local maxima on the average mechanical energy data, storing the corresponding driving frequencies in _resonant_frequencies_.
 
 ## Saving and loading data and using dataset names
+
+The data can be saved by calling the _analyzer_'s method save_resonance_analysis_data, which takes 1 argument:
+1. dataset_name (string) [optional]: The prefix added to every filename before the pendulum's name, separated by an underscore.
+This method creates a .csv file _for every pendulum_ in a 'data' subfolder, with the following naming convention: '/data/[dataset_name]\_[pendulum_name].csv', and stores the aggregate data from _pendulum_resonance_analysis_data_ inside. If _dataset_name_ is unspecified, it will be omitted from the naming convention, so the filenames would be '/data/[pendulum_name].csv'.
+
+This data can be loaded in any of the future runs of the program by calling the method load_resonance_analysis_data, which takes 2 arguments:
+1. dataset_name (string) [optional]: The prefix added to every filename before the pendulum's name, separated by an underscore. In general, this should match the _dataset_name_ used to save the data you want to load.
+2. analyze_self (bool) [optional]: Whether the program should find resonant frequencies of the loaded data. True by default.
+This method should be called **instead of _driving_frequency_analysis_**, and is a direct equivalent of it.
 
 ## Plotting data
 Presets!
