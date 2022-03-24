@@ -43,6 +43,10 @@ Alternatively, you can skip the pendulum creation and addition and call the anal
 
 ## Generating data
 
+To perform the driving frequency analysis itself, call the analyzer's method driving_frequency_analysis. This takes 5 parameters:
+1. driving_frequency_range (tuple): Specifies the range of frequencies of the external force. Is in the form (lower_bound, upper_bound)
+2. cur_external_force_amplitude (float) [optional]: Amplitude of the driving force in N (the driving torque is then l_1F). If unspecified, it takes the default value given in the constructor of the _analyzer_.
+
 ## Saving and loading data and using dataset names
 
 ## Plotting data
