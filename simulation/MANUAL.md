@@ -16,11 +16,12 @@ An 'experiment' is a set of driving frequency analyses conducted on a specified 
 
 ## Setting up the configuration
 
-First, you create any amount of analyzers as instances of the _analyzer_ class. The constructor takes 3 arguments:
+First, you create any amount of analyzers as instances of the _analyzer_ class. The constructor takes 4 arguments:
 
 1. my_dt (float): the step used in numerical integration, of dimension [s]
 2. my_omega_F (float): the *default value* of the driving force angular frequency.
 3. my_external_force_amplitude (float): the *default value* of the driving force amplitude.
+4. dataset_name (string) [optional]: The prefix added to every filename before the regular filename, separated by an underscore. This is used whenever you're exporting data to files, such as plots or tables. If _dataset_name_ is unspecified, it will be omitted from the naming convention, which means it will overwrite any previous files exported from an unnamed dataset, should they match filenames.
 
 The default values will be used in other methods called for this instance if a different value isn't specified.
 
@@ -49,6 +50,10 @@ Alternatively, you can skip the pendulum creation and addition and call the anal
 
 This method handles the naming convention in a different matter to default name generation: rather than sequential indexing, it names each pendulum as '[parameter_set_name]\_[parameter indices]', where _parameter_indices_ is a list-turned-string of integers separated by commas, where the i-th integer refers to the index in the i-th dimension of the parameter space, omitting dimensions that only take a single value, indexing from 1. For example, is _l_space_=[(1.5, 2.7, 5), 2.0], _m_space_=[(5.5, 6.5, 3), (1.2, 6.9, 3)], _g_=9.8, then the pendulums will have names in the form 'p_[a],[b],[c]', where _a_ ranges from 1 to 5 and _b_,_c_ range from 1 to 3, describing the values of l_1, m_1, m_2 respectively.
 
+### Resumption of a previously reached state
+
+Optionally, after adding the multipendulums, you may call the _analyzer_'s method load_state, which takes zero arguments. This method allows you to resume the simulation concluded in a previous run of the program, should you deem the time it has reached insufficient. Calling this method will set the states of the multipendulums to the ones at the end of the previous run and also set the time to the time at which the previous simulation concluded. **This requires that the _dataset_name_ values of the two simulations match and that the multipendulums are the same, added in the same order**. Note that if you run the second simulation, you need to adjust _t_max_, since leaving it at the same value would force the second simulation to terminate immediately.
+
 ## Generating data
 
 To perform the driving frequency analysis itself, call the analyzer's method driving_frequency_analysis. This takes 5 arguments:
@@ -63,17 +68,13 @@ This method stores the aggregate data for each pendulum in the list _pendulum_re
 
 ## Saving and loading data and using dataset names
 
-The data can be saved by calling the _analyzer_'s method save_resonance_analysis_data, which takes 1 argument:
+The data can be saved by calling the _analyzer_'s method save_resonance_analysis_data, which takes 0 arguments. This method creates a .csv file _for every pendulum_ in a 'data' subfolder, with the following naming convention: '/data/[dataset_name]\_[pendulum_name].csv', and stores the aggregate data from _pendulum_resonance_analysis_data_ inside. If _dataset_name_ is unspecified, it will be omitted from the naming convention, so the filenames would be '/data/[pendulum_name].csv'.
 
-1. dataset_name (string) [optional]: The prefix added to every filename before the pendulum's name, separated by an underscore.
-This method creates a .csv file _for every pendulum_ in a 'data' subfolder, with the following naming convention: '/data/[dataset_name]\_[pendulum_name].csv', and stores the aggregate data from _pendulum_resonance_analysis_data_ inside. If _dataset_name_ is unspecified, it will be omitted from the naming convention, so the filenames would be '/data/[pendulum_name].csv'.
+This data can be loaded in any of the future runs of the program by calling the method load_resonance_analysis_data, which takes 1 argument:
 
-This data can be loaded in any of the future runs of the program by calling the method load_resonance_analysis_data, which takes 2 arguments:
+1. analyze_self (bool) [optional]: Whether the program should find resonant frequencies of the loaded data. True by default.
 
-1. dataset_name (string) [optional]: The prefix added to every filename before the pendulum's name, separated by an underscore. In general, this should match the _dataset_name_ used to save the data you want to load.
-2. analyze_self (bool) [optional]: Whether the program should find resonant frequencies of the loaded data. True by default.
-
-This method should be called **instead of _driving_frequency_analysis_**, and is a direct equivalent of it.
+This method should be called **instead of _driving_frequency_analysis_**, and is a direct equivalent of it. The filenames which are loaded are specified by the value of _dataset_name_ of the _analyzer_.
 
 ## Plotting data
 
