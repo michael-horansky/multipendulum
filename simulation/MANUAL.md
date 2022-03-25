@@ -72,7 +72,21 @@ This data can be loaded in any of the future runs of the program by calling the 
 
 1. dataset_name (string) [optional]: The prefix added to every filename before the pendulum's name, separated by an underscore. In general, this should match the _dataset_name_ used to save the data you want to load.
 2. analyze_self (bool) [optional]: Whether the program should find resonant frequencies of the loaded data. True by default.
+
 This method should be called **instead of _driving_frequency_analysis_**, and is a direct equivalent of it.
 
 ## Plotting data
-Presets!
+
+From the moment _pendulum_resonance_analysis_data_ is initialized, either by calling driving_frequency_analysis or load_resonance_analysis_data, the analyzer can plot the data on a graph with a set of subplots by calling the _analyzer_'s method plot_resonance_analysis_data, which takes 4 arguments:
+1. graph_list (list of strings) [optional]: The list of names of graphs which should be included as subplots in the resulting graph. They will appear in the same order as in the list. If unspecified, _graph_list_ takes the value of _default_preset_.
+2. names (list of strings) [optional]: Human-readable names of pendulums, ordered in the same way as the pendulums were added to the analyzer. If unspecified, _pendulum_names_ are used instead.
+3. simple_comparison (tuple) [optional, (True, False) by default]: If enabled, the method will include harmonic oscillator spectra given by SHOs obtained by simplifying the multipendulums' parameters in relevant graphs ('max_theta_1_graph', 'avg_E_graph'). THe first value in the tuple will enable comparison with a SHO of length l_1 for every multipendulum; the second value in the tuple will enable comparison with a SHO of length l_1+l_2+...+l_N for every multipendulum. If multiple multipendulums share a SHO with the same property, it only gets plotted once, lumping their names together in its label.
+4. save_graph (bool) [optional, False by default]: If enabled, the graph will be saved in 'data/[dataset_name].png'.
+
+### Presets
+
+Since _graph_list_ can be quite long and cloggy, you may create and use _presets_ instead. These are just prescribed combinations of graphs saved in lists at the beginning of multipendulum_main.py, which you can use as an argument in plot_resonance_analysis_data. Each preset specializes on a certain subset of relevant physical properties, which determines which graphs it includes. Feel free to add any presets you find yourself using regularly!
+
+### List of graphs
+
+There's a few
