@@ -50,10 +50,6 @@ Alternatively, you can skip the pendulum creation and addition and call the anal
 
 This method handles the naming convention in a different matter to default name generation: rather than sequential indexing, it names each pendulum as '[parameter_set_name]\_[parameter indices]', where _parameter_indices_ is a list-turned-string of integers separated by commas, where the i-th integer refers to the index in the i-th dimension of the parameter space, omitting dimensions that only take a single value, indexing from 1. For example, is _l_space_=[(1.5, 2.7, 5), 2.0], _m_space_=[(5.5, 6.5, 3), (1.2, 6.9, 3)], _g_=9.8, then the pendulums will have names in the form 'p_[a],[b],[c]', where _a_ ranges from 1 to 5 and _b_,_c_ range from 1 to 3, describing the values of l_1, m_1, m_2 respectively.
 
-### Resumption of a previously reached state
-
-Optionally, after adding the multipendulums, you may call the _analyzer_'s method load_state, which takes zero arguments. This method allows you to resume the simulation concluded in a previous run of the program, should you deem the time it has reached insufficient. Calling this method will set the states of the multipendulums to the ones at the end of the previous run and also set the time to the time at which the previous simulation concluded. **This requires that the _dataset_name_ values of the two simulations match and that the multipendulums are the same, added in the same order**. Note that if you run the second simulation, you need to adjust _t_max_, since leaving it at the same value would force the second simulation to terminate immediately.
-
 ## Generating data
 
 To perform the driving frequency analysis itself, call the analyzer's method driving_frequency_analysis. This takes 5 arguments:
@@ -62,9 +58,19 @@ To perform the driving frequency analysis itself, call the analyzer's method dri
 2. cur_external_force_amplitude (float) [optional]: Amplitude of the driving force in [N] (the driving torque is then l_1\*F). If unspecified, it takes the default value given in the constructor of the _analyzer_.
 3. datapoints (int): Number of datapoints for the analysis. The program will iterate through values of omega_F from a linspace given by _driving_frequency_range_ and this value.
 4. t_max (float): The value of simulation time at which it terminates for each datapoint, in [s].
-5. t_threshold (float): The value of simulation time at which the aggregate data start being recorded. This is to exclude transient behaviour from the collected data.
+5. t_threshold (float): The value of simulation time at which the aggregate data start being recorded, in [s]. This is to exclude transient behaviour from the collected data.
+6. overwrite_stored_states (bool) [optional, True by default]: If enabled, if there was an analysis with the same values of _driving_frequency_range_, _cur_external_force_amplitude_, and _datapoints_ saved from before, it will be rewritten by the results from this analysis.
 
 This method stores the aggregate data for each pendulum in the list _pendulum_resonance_analysis_data_, and also perform a peak search that finds the local maxima on the average mechanical energy data, storing the corresponding driving frequencies in _resonant_frequencies_.
+
+### Resumption of a previously reached state and state memory
+
+Alternatively to driving_frequency_analysis, you may call the _analyzer_'s method load_state, which takes the same 6 arguments as driving_frequency_analysis. This method allows you to resume the simulation concluded in a previous run of the program, should you deem the time it has reached insufficient. Calling this method will set the states of the multipendulums to the ones at the end of the previous run and also set the time to the time at which the previous simulation concluded. **For this method to work, three conditions must be met:**
+1. The _dataset_name_ values of this and the previous _analyzer_ must match
+2. The multipendulum populations are the same and added in the same order.
+3. The values of _driving_frequency_range_, _cur_external_force_amplitude_, and _datapoints_ must have been analyzed before, so that they've been stored in the configuration memory of the program. To check the content of the memory, call the _analyzer_'s method print_state_memory, which takes 0 arguments.
+
+Note that you need to adjust _t_max_ and _t_threshold_, since leaving them at the same value would force the second simulation to terminate immediately.
 
 ## Saving and loading data and using dataset names
 
@@ -91,3 +97,13 @@ Since _graph_list_ can be quite long and cloggy, you may create and use _presets
 ### List of graphs
 
 There's a few
+
+# Analyzer management
+
+The analyzer does a lot of funky stuff in the background, mainly storing some data in its configuration memories, for example the state memory. This stuff can be examined and managed via a set of _analyzer_'s methods, a.k.a. commands.
+
+The most common common command is "help", which prints the list of available commands with short descriptions.
+
+## Configuration memories
+
+
