@@ -65,12 +65,17 @@ This method stores the aggregate data for each pendulum in the list _pendulum_re
 
 ### Resumption of a previously reached state and state memory
 
-Alternatively to driving_frequency_analysis, you may call the _analyzer_'s method load_state, which takes the same 6 arguments as driving_frequency_analysis. This method allows you to resume the simulation concluded in a previous run of the program, should you deem the time it has reached insufficient. Calling this method will set the states of the multipendulums to the ones at the end of the previous run and also set the time to the time at which the previous simulation concluded. **For this method to work, three conditions must be met:**
+Alternatively to driving_frequency_analysis, you may call the _analyzer_'s method load_state, which takes 3 arguments:
+
+1. t_max (float): The value of simulation time at which it terminates for each datapoint, in [s].
+2. t_threshold (float): The value of simulation time at which the aggregate data start being recorded, in [s]. This is to exclude transient behaviour from the collected data.
+3. overwrite_stored_states (bool) [optional, True by default]: If enabled, it will rewrite the saved states.
+
+This method allows you to resume the simulation concluded in a previous run of the program, should you deem the time it has reached insufficient. Calling this method will set the states of the multipendulums to the ones at the end of the previous run and also set the time to the time at which the previous simulation concluded. **For this method to work, 2 conditions must be met:**
 1. The _dataset_name_ values of this and the previous _analyzer_ must match
 2. The multipendulum populations are the same and added in the same order.
-3. The values of _driving_frequency_range_, _cur_external_force_amplitude_, and _datapoints_ must have been analyzed before, so that they've been stored in the configuration memory of the program. To check the content of the memory, call the _analyzer_'s method print_state_memory, which takes 0 arguments.
 
-Note that you need to adjust _t_max_ and _t_threshold_, since leaving them at the same value would force the second simulation to terminate immediately.
+Note that you need to adjust _t_max_ and _t_threshold_, since leaving them at the same value would force the second simulation to terminate immediately. Also note that the driving frequency range, driving force amplitude, and the number of datapoints are all given by _dataset_name_, as these are all saved with a specific _dataset_name_ when you run driving_frequency_analysis.
 
 ## Saving and loading data and using dataset names
 
@@ -78,7 +83,7 @@ The data can be saved by calling the _analyzer_'s method save_resonance_analysis
 
 This data can be loaded in any of the future runs of the program by calling the method load_resonance_analysis_data, which takes 1 argument:
 
-1. analyze_self (bool) [optional]: Whether the program should find resonant frequencies of the loaded data. True by default.
+1. analyze_self (bool) [optional, True by default]: Whether the program should find resonant frequencies of the loaded data.
 
 This method should be called **instead of _driving_frequency_analysis_**, and is a direct equivalent of it. The filenames which are loaded are specified by the value of _dataset_name_ of the _analyzer_.
 
