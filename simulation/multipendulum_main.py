@@ -16,21 +16,27 @@ jarek_N = 5
 p2_small = multipendulum([5.0, 3.0], [5.0, 3.0], 9.8)
 p2_333   = multipendulum([5.0, 5.0], [5.0, 5.0], 9.8)
 p3_small = multipendulum([5.0, 3.0, 3.0], [5.0, 3.0, 3.0], 9.8)
+p3_big   = multipendulum([5.0, 5.0, 5.0], [5.0, 5.0, 5.0], 9.8)
 
 
-energy_vs_amplitude = analyzer(0.01, 1.0, 2.5)
+# in state memory, first line is the driving frequency raneg etc, then every line is one state value (state of each pendulum separated by |)
+
+energy_vs_amplitude = analyzer(0.01, 1.0, 2.5, "middle_freq")
 
 #energy_vs_amplitude.add_pendulum(p2_small, "double-pendulum")
 energy_vs_amplitude.add_pendulum(p3_small, "triple-pendulum")
+#energy_vs_amplitude.add_pendulum(p3_big  , "p3 big"  )
 
-#energy_vs_amplitude.driving_frequency_analysis(driving_frequency_range=(0.1, 4.0), t_max = 100.0, t_threshold=50.0)
+#energy_vs_amplitude.load_state(25.0, 20.0)
+#energy_vs_amplitude.driving_frequency_analysis(driving_frequency_range=(0.1, 4.0), datapoints=10, t_max = 20.0, t_threshold=15.0, overwrite_stored_states=False)
+
+energy_vs_amplitude.driving_frequency_analysis(driving_frequency_range=(2.0, 2.6), datapoints = 10, t_max = 100.0, t_threshold=80.0)
+#energy_vs_amplitude.load_resonance_analysis_data()
+energy_vs_amplitude.plot_resonance_analysis_data(save_graph=True)
+
 """
-energy_vs_amplitude.driving_frequency_analysis(driving_frequency_range=(2.0, 2.6), datapoints = 200, t_max = 200.0, t_threshold=100.0)
-energy_vs_amplitude.save_resonance_analysis_data("middle_freq_zoom")
-energy_vs_amplitude.plot_resonance_analysis_data()"""
-
 p3_small.random_state(np.pi)
-energy_vs_amplitude.animate(50.0, 40.0)
+energy_vs_amplitude.animate(50.0, 40.0)"""
 
 #resonant_frequencies = [1.065326633165829, 2.170854271356784, 3.5376884422110555]
 #resonant frequencies = [1.0603015075376885, 2.1404522613065327, 2.2384422110552764, 3.549246231155779]

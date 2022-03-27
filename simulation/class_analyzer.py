@@ -51,7 +51,7 @@ class analyzer:
     
     number_of_videos = 0
     
-    def __init__(self, my_dt, my_omega_F, my_external_force_amplitude):
+    def __init__(self, my_dt, my_omega_F, my_external_force_amplitude, dataset_name = ''):
         
         self.pendulums = []
         self.pendulum_names = []
@@ -64,6 +64,9 @@ class analyzer:
         self.omega_F = my_omega_F
         self.external_force_amplitude = my_external_force_amplitude
         
+        if dataset_name != '':
+            dataset_name += '_'
+        self.dataset_name = dataset_name
         #self.trace_frame = np.zeros((self.o_c_h, self.o_c_w, 3), dtype=np.uint8) + 255
     
     
@@ -92,7 +95,73 @@ class analyzer:
         for pendulum in self.pendulums:
             pendulum.step(self.dt, cur_external_force_list)
         
-        self.t += self.dt    
+        self.t += self.dt
+    
+    # ----------- config memory ------------------------------
+    
+    def save_state_memory(self, state_memory_values_by_pendulum, driving_frequency_range, external_force_amplitude, datapoints, t_terminate):
+        state_memory_file = open('data/config/' + self.dataset_name + 'state_memory.txt', 'w')
+        
+        omega_F_min, omega_F_max = driving_frequency_range
+        config_string = '%f,%f,%f,%i,%f\n' % (omega_F_min, omega_F_max, external_force_amplitude, datapoints, t_terminate)
+        state_memory_file.write(config_string)
+        
+        #print(state_memory_values_by_pendulum)
+        
+        for i in range(datapoints):
+            cur_line = ""
+            for p_i in range(len(self.pendulums)):
+                for s_i in range(self.pendulums[p_i].N):
+                    cur_line += (str(state_memory_values_by_pendulum[p_i][i][0][s_i]) + ',')
+                cur_line = cur_line[:-1] + ';'
+                for s_i in range(self.pendulums[p_i].N):
+                    cur_line += (str(state_memory_values_by_pendulum[p_i][i][1][s_i]) + ',')
+                cur_line = cur_line[:-1] + '|'
+            state_memory_file.write(cur_line[:-1])
+            if i != datapoints - 1:
+                state_memory_file.write('\n')
+        state_memory_file.close()
+                
+        
+    
+    
+    def read_state_memory(self):
+        print("Loading previous states for the dataset " + self.dataset_name)
+        try:
+            state_memory_file = open('data/config/' + self.dataset_name + 'state_memory.txt', 'r')
+            state_memory_lines = state_memory_file.readlines()
+            state_memory_file.close()
+            #self.state_memory
+            config_line = state_memory_lines[0]
+            config_vals = config_line.split(",")
+            omega_F_min = float(config_vals[0])
+            omega_F_max = float(config_vals[1])
+            external_force_amplitude = float(config_vals[2])
+            datapoints  = int(config_vals[3])
+            t_start     = float(config_vals[4])
+            state_memory_lines = state_memory_lines[1:]
+            
+            print("  Dataset loaded with the following configuration:")
+            print("  driving frequency range = (%0.2f, %0.2f), force amplitude = %0.2f, number of datapoints = %i, starting time = %0.2f" % (omega_F_min, omega_F_max, external_force_amplitude, datapoints, t_start))
+            
+            state_memory_values_by_pendulum = empty_list_list(len(self.pendulums))
+            for i in range(datapoints):
+                cur_vals_by_pendulum = state_memory_lines[i].split('|')
+                for p_i in range(len(self.pendulums)):
+                    cur_state = cur_vals_by_pendulum[p_i].split(';')
+                    #print(cur_state)
+                    cur_theta_state     = elementwise_casting(cur_state[0].split(','), float)
+                    cur_theta_dot_state = elementwise_casting(cur_state[1].split(','), float)
+                    state_memory_values_by_pendulum[p_i].append([cur_theta_state, cur_theta_dot_state])
+            
+            return(state_memory_values_by_pendulum, (omega_F_min, omega_F_max), external_force_amplitude, datapoints, t_start)
+            
+                
+        except FileNotFoundError:
+            print("  This dataset wasn't analyzed before.")
+            return(0)
+    
+    
     # ----------- simple output methods ----------------------
     
     def initialize_video(self):
@@ -213,11 +282,10 @@ class analyzer:
             
     
     
-    def driving_frequency_analysis(self, driving_frequency_range, cur_external_force_amplitude = -1, datapoints = 200, t_max = 50.0, t_threshold=10.0):
+    def driving_frequency_analysis(self, driving_frequency_range, cur_external_force_amplitude = -1, datapoints = 200, t_max = 50.0, t_threshold=10.0, overwrite_stored_states = True, starting_states=[], t_start=0.0):
         
         if cur_external_force_amplitude == -1:
             cur_external_force_amplitude = self.external_force_amplitude
-        
         
         # describe all pendulums in t
         print("F = " + str(cur_external_force_amplitude) + "; omega_F_range = " + str(driving_frequency_range))
@@ -238,6 +306,11 @@ class analyzer:
         # First purge the old data
         self.pendulum_resonance_analysis_data = []
         # The data is a dictionary where each value is a list of measured values, for easier data interpretation
+        
+        # If saving states, create an array for them
+        if overwrite_stored_states:
+            state_memory_values_by_pendulum = []
+        
         for p_i in range(len(self.pendulums)):
             print("Analyzing pendulum " + self.pendulum_names[p_i])
             # initialize relevant data containers
@@ -251,6 +324,9 @@ class analyzer:
             cur_data['hp_theta_std'] = empty_list_list(self.pendulums[p_i].N)
             cur_data['hp_phi_std'  ] = empty_list_list(self.pendulums[p_i].N)
             
+            if overwrite_stored_states:
+                state_memory_values_by_pendulum.append([])
+            
             start_time = time.time()
             progress = 0
             for omega_i in range(len(omega_space)):
@@ -261,8 +337,12 @@ class analyzer:
                     progress += 1
                     print(  "  Analysis in progress: " + str(progress) + "%; est. time of finish: " + time.strftime("%H:%M:%S", time.localtime( (time.time()-start_time) * 100 / progress + start_time )), end='\r')
                 
-                self.t = 0.0
-                self.pendulums[p_i].reset_state()
+                self.t = t_start
+                if starting_states == []:
+                    self.pendulums[p_i].reset_state()
+                else:
+                    #print(len(starting_states[omega_i][0]), len(starting_states[omega_i][1]))
+                    self.pendulums[p_i].set_state(starting_states[p_i][omega_i][0],starting_states[p_i][omega_i][1])
                 
                 max_theta_1 = 0.0
                 avg_E = 0.0
@@ -348,6 +428,11 @@ class analyzer:
                     cur_data['ang_f_phi'   ][s_i].append(ang_f_phi[s_i]                  )
                     cur_data['hp_theta_std'][s_i].append(halfperiod_length_std_theta[s_i])
                     cur_data['hp_phi_std'  ][s_i].append(halfperiod_length_std_phi[s_i]  )
+                
+                
+                if overwrite_stored_states:
+                    state_memory_values_by_pendulum[p_i].append([self.pendulums[p_i].theta, self.pendulums[p_i].theta_dot])
+                
             cur_data['omega_F'    ] = np.array(cur_data['omega_F'    ])
             cur_data['max_theta_1'] = np.array(cur_data['max_theta_1'])
             cur_data['avg_E'      ] = np.array(cur_data['avg_E'      ])
@@ -362,14 +447,25 @@ class analyzer:
         self.find_resonant_frequencies()
         print("Resonant frequencies found:")
         for p_i in range(len(self.pendulums)):
-            print("  " + self.pendulum_names[p_i] + ': ' + list_to_str(self.resonant_frequencies[p_i]))
+            if len(self.resonant_frequencies[p_i]) > 0:
+                print("  " + self.pendulum_names[p_i] + ': ' + list_to_str(self.resonant_frequencies[p_i]))
+            else:
+                print("  " + self.pendulum_names[p_i] + ': No resonant frequencies found')
+        
+        if overwrite_stored_states:
+            self.save_state_memory(state_memory_values_by_pendulum, driving_frequency_range, cur_external_force_amplitude, datapoints, t_max)
     
     
+    def load_state(self, t_max, t_threshold, overwrite_stored_states = True):
+        
+        state_memory_values_by_pendulum, driving_frequency_range, external_force_amplitude, datapoints, t_start = self.read_state_memory()
+        self.driving_frequency_analysis(driving_frequency_range, external_force_amplitude, datapoints, t_max, t_threshold, overwrite_stored_states, state_memory_values_by_pendulum, t_start)
+        
     
     # ---------------------------- analysis output methods --------------------------
         
     
-    def plot_resonance_analysis_data(self, graph_list=['max_theta_1_graph', 'avg_E_graph', 'ang_f_theta_graph', 'hp_theta_std_graph', 'ang_f_phi_graph', 'hp_phi_std_graph'], names=-1, max_theta_simple_comparison = True):
+    def plot_resonance_analysis_data(self, graph_list=['max_theta_1_graph', 'avg_E_graph', 'ang_f_theta_graph', 'hp_theta_std_graph', 'ang_f_phi_graph', 'hp_phi_std_graph'], names=-1, max_theta_simple_comparison = True, save_graph=False):
         
         if names == -1:
             names = self.pendulum_names
@@ -394,7 +490,6 @@ class analyzer:
                     plt.plot(self.pendulum_resonance_analysis_data[p_i]['omega_F'], self.pendulum_resonance_analysis_data[p_i]['max_theta_1'], '.-', label=self.pendulum_names[p_i] + " data")
                     for res_f in self.resonant_frequencies[p_i]:
                         plt.axvline(x=res_f, linestyle='dotted')
-                plt.legend()
             if graph_list[i] == 'avg_E_graph':
                 plt.title("Time-average mechanical energy")
                 plt.xlabel("$\omega_F$ [rad.s$^{-1}$]")
@@ -403,7 +498,6 @@ class analyzer:
                     plt.plot(self.pendulum_resonance_analysis_data[p_i]['omega_F'], self.pendulum_resonance_analysis_data[p_i]['avg_E'], '.-', label=self.pendulum_names[p_i] + " data")
                     for res_f in self.resonant_frequencies[p_i]:
                         plt.axvline(x=res_f, linestyle='dotted')
-                plt.legend()
             if graph_list[i] == 'avg_E_ratio_graph':
                 plt.title("Time-average mechanical energy (fraction of max val.)")
                 plt.xlabel("$\omega_F$ [rad.s$^{-1}$]")
@@ -414,7 +508,6 @@ class analyzer:
                     plt.plot(self.pendulum_resonance_analysis_data[p_i]['omega_F'], self.pendulum_resonance_analysis_data[p_i]['avg_E'] / max_avg_E_amp, '.-', label=self.pendulum_names[p_i] + " data")
                     for res_f in self.resonant_frequencies[p_i]:
                         plt.axvline(x=res_f, linestyle='dotted')
-                plt.legend()
             if graph_list[i] == 'ang_f_theta_graph':
                 plt.title("Angular frequencies")
                 #plt.ylim(0, max_ang_f_val * 1.1)
@@ -428,7 +521,6 @@ class analyzer:
                     for res_f in self.resonant_frequencies[p_i]:
                         plt.axvline(x=res_f, linestyle='dotted')
                         plt.axhline(y=res_f, linestyle='dotted')
-                plt.legend()
             if graph_list[i] == 'ang_f_phi_graph':
                 plt.title("Angular frequencies of angle differences")
                 #plt.ylim(0, max_ang_f_val * 1.1)
@@ -442,7 +534,6 @@ class analyzer:
                     for res_f in self.resonant_frequencies[p_i]:
                         plt.axvline(x=res_f, linestyle='dotted')
                         plt.axhline(y=res_f, linestyle='dotted')
-                plt.legend()
             """if graph_list[i] == 'ang_f_theta_space':
                 plt.title("Angular frequency space")
                 #border_coefficient = 1.05
@@ -484,26 +575,27 @@ class analyzer:
                     # predicted resonant frequencies
                     #for pred_res_f in predicted_resonant_frequency_list[my_filenames[i]]:
                     #    plt.axvline(x=pred_res_f, linestyle='dotted', color=max_amp_plotline_color_list[my_filenames[i]], label = my_filenames[i] + " predicted res f")
-        plt.legend()
-                
-        plt.legend()
+            plt.legend()
+
         
         plt.tight_layout()
+        
+        if save_graph:
+            plt.savefig("data/outputs/" + self.dataset_name + "graph_output.png")
         plt.show()
     
     
-    def save_resonance_analysis_data(self, dataset_name = ''):
+    def save_resonance_analysis_data(self):
         
         if len(self.pendulum_resonance_analysis_data) == 0:
             print("No data to save.")
             return(0)
-        if dataset_name != '':
-            dataset_name += '_'
+
         for p_i in range(len(self.pendulums)):
             
             cur_data = self.pendulum_resonance_analysis_data[p_i]
             
-            output_file = open("data/" + dataset_name + self.pendulum_names[p_i] + '.csv', mode='w')
+            output_file = open("data/" + self.dataset_name + self.pendulum_names[p_i] + '.csv', mode='w')
             output_writer = csv.writer(output_file,  delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             
             data_N = len(cur_data['omega_F'])
@@ -547,7 +639,7 @@ class analyzer:
         # edit config file - t_max, t_thresh, resonant frequencies maybe?
         
     # load resonance data
-    def load_resonance_analysis_data(self, dataset_name='', analyze_self = True):
+    def load_resonance_analysis_data(self, analyze_self = True):
         # before loading, you need to add the pendulums into the analyzer
         # the analyzer will match the pendulums' names with the csv files
         if len(self.pendulums) == 0:
@@ -557,8 +649,6 @@ class analyzer:
         # purge old data
         self.pendulum_resonance_analysis_data = []
         
-        if dataset_name != '':
-            dataset_name += '_'
         for p_i in range(len(self.pendulums)):
             
             self.pendulum_resonance_analysis_data.append({})
@@ -571,7 +661,7 @@ class analyzer:
             cur_data['hp_theta_std'] = empty_list_list(self.pendulums[p_i].N)
             cur_data['hp_phi_std'  ] = empty_list_list(self.pendulums[p_i].N)
             
-            input_file = open("data/" + dataset_name + self.pendulum_names[p_i] + '.csv', newline='')
+            input_file = open("data/" + self.dataset_name + self.pendulum_names[p_i] + '.csv', newline='')
             input_reader = csv.reader(input_file, delimiter=',', quotechar='"')
             
             input_rows = list(input_reader)

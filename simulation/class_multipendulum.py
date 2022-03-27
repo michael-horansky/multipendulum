@@ -4,6 +4,8 @@ import numpy as np
 import time
 
 def list_to_str(my_list, unit_str = '', separation_str = ', '):
+    if len(my_list) == 0:
+        return('')
     if unit_str != '':
         unit_str = " " + unit_str
     output = ""
@@ -11,6 +13,12 @@ def list_to_str(my_list, unit_str = '', separation_str = ', '):
         output += str(my_list[i]) + unit_str + separation_str
     output += str(my_list[-1]) + unit_str
     return(output)
+
+def elementwise_casting(my_list, my_type):
+    res_list = []
+    for i in range(len(my_list)):
+        res_list.append(my_type(my_list[i]))
+    return(res_list)
 
 def empty_list_list(length):
     result = []
