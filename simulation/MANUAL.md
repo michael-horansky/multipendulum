@@ -52,7 +52,7 @@ This method handles the naming convention in a different matter to default name 
 
 ## Generating data
 
-To perform the driving frequency analysis itself, call the analyzer's method driving_frequency_analysis. This takes 5 arguments:
+To perform the driving frequency analysis itself, call the analyzer's method driving_frequency_analysis. This takes 8 arguments:
 
 1. driving_frequency_range (tuple): Specifies the range of frequencies of the external force. Is in the form (lower_bound, upper_bound)
 2. cur_external_force_amplitude (float) [optional]: Amplitude of the driving force in [N] (the driving torque is then l_1\*F). If unspecified, it takes the default value given in the constructor of the _analyzer_.
@@ -60,6 +60,8 @@ To perform the driving frequency analysis itself, call the analyzer's method dri
 4. t_max (float): The value of simulation time at which it terminates for each datapoint, in [s].
 5. t_threshold (float): The value of simulation time at which the aggregate data start being recorded, in [s]. This is to exclude transient behaviour from the collected data.
 6. overwrite_stored_states (bool) [optional, True by default]: If enabled, if there was an analysis with the same values of _driving_frequency_range_, _cur_external_force_amplitude_, and _datapoints_ saved from before, it will be rewritten by the results from this analysis.
+7. starting_states (list) [optional]: If provided, the pendulums won't start from a zero state, but from the respective states given by this matrix (indexed as _starting_states_[pendulum index][datapoint index]). Used primarily by the program when resuming previous analysis, and there's no reason for a user to use this argument.
+8. t_start (float) [optional]: If provided, the simulation won't start from t=0, but rather from t_start (in [s]). Used primarily by the program when resuming previous analysis, and there's no reason for a user to use this argument.
 
 This method stores the aggregate data for each pendulum in the list _pendulum_resonance_analysis_data_, and also perform a peak search that finds the local maxima on the average mechanical energy data, storing the corresponding driving frequencies in _resonant_frequencies_.
 
