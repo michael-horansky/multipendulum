@@ -1,0 +1,6 @@
+# First: we ignore all outputs of specific program configurations
+# This includes .avi, .png files, as well as the /data and /__pycache__ folders
+*.avi
+*.png
+data/
+__pycache__/
