@@ -1,0 +1,118 @@
+\documentclass[12pt]{article}
+\usepackage{stdheadstart}
+\usepackage{xargs}
+\usepackage{physics}
+\usepackage{amsmath}
+\insheadstart{images/}
+
+
+\begin{document}
+
+	\section{The normal modes of a multipendulum}
+	
+	The multipendulum has the following energies:
+	\begin{eqnarray*}
+	T &=& \frac{1}{2}\sum_{i=1}^N m_i\left[\left(\sum_{j=1}^i \dot{\theta}_jl_j\cos{\theta_j}\right)^2+\left(\sum_{j=1}^i \dot{\theta}_jl_j\sin{\theta_j}\right)^2\right]\\
+	V^* &=& -g\sum_{i=1}^N m_i\sum_{j=1}^i l_j\cos{\theta_j}
+	\end{eqnarray*}
+	We will add a constant $V_0$ to $V^*$ where
+	$$V_0=g\sum_{i=1}^N m_i\sum_{j=1}^i l_j$$
+	so $V=V^*+V_0$ becomes
+	$$V = -g\sum_{i=1}^N m_i\sum_{j=1}^i l_j\left(\cos{\theta_j}-1\right)$$
+	This will prove helpful in later calculations.
+	
+	\subsection{Finding the stable equilibrium positions}
+	Equilibrium positions $\vec{\theta}_m$ are such that
+	$$\eval{\dv{V^*}{\vec{\theta}}}_{\vec{\theta}_m}=0$$
+	Since $V^*$ is a linear combination of $\cos{\theta_i}$ terms, the stable equilibrium points will occur at points in space where
+	$$\theta_i=0 \mbox{ or } \theta_i=\pi \mbox{ for } i = 1, 2,\dots N$$
+	By inspection, we see that the only stable equilibrium is where $\vec{\theta}=\vec{0}$. Hence we can treat $\vec{\theta}$ as the perturbation about the equilibrium.
+	
+	\subsection{Perturbing the Lagrangian to the 2nd order about the equilibrium}	
+	We have $L = T - V$. We can perturb $T$ and $L$ separately and bring them together afterwards.\\
+	In our ansatz:
+	$$\theta_i(t)=\epsilon e^{i\omega_i t},\dot{\theta}_i(t)=\epsilon\omega e^{i\omega_i t}$$
+	where $O(\epsilon^3)=0$.
+	\subsubsection{Perturbing the $T$ term}
+	Consider the following expansion of $\sin{\theta}$:
+	$$\sin{\theta}=\theta+O(\theta^3)=\theta$$
+	Then the term
+	$$\left(\sum_{j=1}^i \dot{\theta}_jl_j\sin{\theta_j}\right)^2=\left(\sum_{j=1}^i \dot{\theta}_jl_j\theta_j\right)^2=O(\theta^4)+O(\theta^2\dot{\theta}^2)+O(\dot{\theta}^4)=O(\epsilon^4)=0$$
+	Using the expansion of $\cos{\theta}$
+	$$\cos{\theta}=1-\frac{1}{2}\theta^2+O(\theta^4)=1-\frac{1}{2}\theta^2$$
+	we can rewrite $T$ as
+	$$T=\frac{1}{2}\sum_{i=1}^N m_i\left(\sum_{j=1}^i \dot{\theta}_jl_j\left(1-\frac{1}{2}\theta_j^2\right)\right)^2=\frac{1}{2}\sum_{i=1}^N m_i\left(\sum_{j=1}^i \dot{\theta}_jl_j-\frac{1}{2}\dot{\theta}_jl_j\theta_j^2\right)^2=\frac{1}{2}\sum_{i=1}^N m_i\left(\sum_{j=1}^i \dot{\theta}_jl_j\right)^2$$
+	since $\dot{\theta}_j\theta^2=O(\epsilon^3)=0$.
+	
+	\subsubsection{Perturbing the $V$ term}
+	This is more straightforward; we substitute the expansion of $\cos{\theta}$ into our expression for the potential:
+	$$V=-g\sum_{i=1}^N m_i\sum_{j=1}^i l_j\left(1-\frac{1}{2}\theta_j^2-1\right)=\frac{1}{2}g\sum_{i=1}^N m_i\sum_{j=1}^i l_j\theta_j^2$$
+	
+	\subsection{Changing to natural coordinates}
+	We wish to make a coordinate transformation $\vec{\theta}\rightarrow\vec{q}$ such that the kinetic term becomes
+	$$T=\frac{1}{2}\dot{\vec{q}}\cdot\dot{\vec{q}}$$
+	By observing our kinetic term, we can guess the correct answer:
+	$$q_i = \sqrt{m_i}\sum_{j=1}^il_j\theta_j,\mbox{ }\dot{q}_i = \sqrt{m_i}\sum_{j=1}^il_j\dot{\theta}_j$$
+	We now wish to have an expression for $V$ in terms of $\vec{q}$. First, we would like to obtain $\theta{i}$ as a function of $\vec{q}$.\\
+	First we form a recurrence relation for $\vec{q}$:
+	\begin{eqnarray*}
+	q_1 &=& \sqrt{m_1}l_1\theta_1\\
+	q_n &=& \sqrt{\frac{m_n}{m_{n-1}}}q_{n-1} + \sqrt{m_m}l_n\theta_n
+	\end{eqnarray*}
+	From this we have
+	\begin{eqnarray*}
+	\theta_1 &=& \frac{q_1}{l_1\sqrt{m_1}}\\
+	\theta_n &=& \frac{1}{l_n}\left(\frac{q_n}{\sqrt{m_n}}-\frac{q_{n-1}}{\sqrt{m_{n-1}}}\right)
+	\end{eqnarray*}
+	We now reindex teh double summation in $V$:
+	$$V=\frac{1}{2}g\sum_{i=1}^Nl_i\theta_i^2\sum_{j=1}^Nm_j$$
+	To make matters simpler, we define a new vector $\vec{\mu}$ such that
+	$$\mu_i=\sum_{j=i}^Nm_j$$
+	Then we substitute $\theta_n(q_1, q_2,\dots q_N)$ into $V$:
+	\begin{eqnarray*}		
+	V&=&\frac{1}{2}g\left[\frac{\mu_1}{l_1}\left(\frac{q_1}{\sqrt{m_1}}\right)^2+\sum_{i=2}^N\frac{\mu_i}{l_i}\left(\frac{q_i}{\sqrt{m_i}}-\frac{q_{i-1}}{\sqrt{m_{i-1}}}\right)^2\right]\\
+	&=&\frac{1}{2}g\left[\frac{q_N^2}{l_N}+\sum_{i=1}^{N-1}\left(\left(\frac{\mu_i}{l_i}+\frac{\mu_{i+1}}{l_{i+1}}\right)\frac{q_i^2}{m_i}-2\frac{\mu_{i+1}}{l_{i+1}}\frac{q_iq_{i+1}}{\sqrt{m_im_{i+1}}}\right)\right]
+	\end{eqnarray*}
+	
+	\subsection{Determining the $k$ matrix}
+	We can now write our Lagrangian in the form
+	$$L=\frac{1}{2}\dot{\vec{q}}\cdot\dot{\vec{q}}-\frac{1}{2}\vec{q}\cdot k\vec{q}$$
+	where $k$ is a matrix defined as
+	$$k_{ij}=\pdv{V}{q^i}{q^j}$$
+	Now:
+	$$\pdv{V}{q^j}=\begin{cases} 
+      \frac{g}{l_N}\left(q_N-\sqrt{\frac{m_N}{m_{N-1}}}q_{N-1}\right) & j=N \\[10pt]
+	  g\left[\left(\frac{\mu_1}{l_1}+\frac{\mu_{2}}{l_{2}}\right)\frac{q_1}{m_1}-\frac{\mu_{2}}{l_{2}\sqrt{m_1m_{2}}}q_{2}\right] & j = 1\\[10pt]
+      g\left[\left(\frac{\mu_j}{l_j}+\frac{\mu_{j+1}}{l_{j+1}}\right)\frac{q_j}{m_j}-\frac{\mu_j}{l_j\sqrt{m_{j-1}m_j}}q_{j-1}-\frac{\mu_{j+1}}{l_{j+1}\sqrt{m_jm_{j+1}}}q_{j+1}\right] & \mbox{otherwise} 
+   \end{cases}$$
+   Taking the second partial derivative and setting this equal to the $ij$-th element of $k$:
+   $$k_{ij}=\begin{cases}
+   
+     \frac{g}{l_N} & i = j = N \\[10pt]
+     
+     -\frac{g}{l_N}\sqrt{\frac{m_N}{m_{N-1}}} & i = N-1, j = N \\[10pt]
+     
+     -\frac{g}{l_{j+1}}\frac{\mu_{j+1}}{\sqrt{m_jm_{j+1}}} & i = j + 1, j\neq N \\[10pt]
+     
+     \frac{g}{m_j}\left(\frac{\mu_j}{l_j}+\frac{\mu_{j+1}}{l_{j+1}}\right) & i = j \neq N \\[10pt]
+     
+     -\frac{g}{l_{j}}\frac{\mu_{j}}{\sqrt{m_{j-1}m_{j}}} & i = j - 1, j\neq N \\[10pt]
+     
+     0 & \mbox{otherwise}
+   
+  \end{cases}$$
+	
+	We see that $k_{ij}=k_{ji}\rightarrow k$ is symmetric, as expected.
+	
+	\subsection{Determining the normal modes and associated natural frequencies}
+	
+	Obtaining the set of eigenvectors $\vec{v}_i$ and associated eigenvalues $\lambda_i$ of matrix $k$, we know that the normal modes are in the form
+	$$\vec{q}_n(t)=\vec{v}_n e^{i\omega_n t}, \omega_n = \sqrt{\lambda_n}$$
+	We now wish to represent this motion in the original coordinates, that is, find $\vec{\theta}_n(t)=f(\vec{v}_n, \omega_n)$. To do this, we just substitute the $i$-th and $(i-1)$-th elements of $\vec{q}_n$ into our expression for $\theta_i(q_i, q_{q-1})$:
+	\begin{eqnarray*}
+	\theta_{n,1}(t) &=& \frac{v_{n, 1}}{l_1\sqrt{m_1}}e^{i\omega_n t}\\
+	\theta_{n, i}(t)&=& \frac{1}{l_i} \left(\frac{v_{n,i}}{\sqrt{m_i}}-\frac{v_{n,i-1}}{\sqrt{m_{i-1}}}\right)e^{i\omega_n t}
+	\end{eqnarray*}
+	where $n$ is the index of the normal mode and $i$ is the index of the segment.
+	
+\end{document}

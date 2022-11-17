@@ -1,0 +1,62 @@
+\documentclass[12pt]{article}
+\usepackage{stdheadstart}
+\usepackage{xargs}
+\usepackage{physics}
+\insheadstart{images/}
+
+
+\begin{document}
+
+	\title{Derivation of the closed-form expressions for the small-angle resonant frequencies of the double-pendulum as perturbations of the two principal edge cases}
+	\author{Skippy McDippy}
+	\maketitle	
+	
+	\section{Conversion to normal modes - motivation}
+
+	By plotting the time evolution of $\frac{\theta_1}{\theta_2}$, we observe that both resonances roughly correspond to the two normal modes: one when $\theta_2=|n|\theta_1$, other when $\theta_2=-|n|\theta_1$.
+	
+	\section{The constrained Lagrangian}
+	Suppose the general Lagrangian of the double-pendulum $\mathcal{L}$ allows a stable-state normal mode behaviour, characterised by some constraint equation $f(\vec{q},\vec{\dot{q}})=0$. Then its functional solution $\vec{q}(t)$ must also be a solution to the E-L equation emerging from the constrained Lagrangian $\mathcal{L}^*$, which reduces its coordinates $\vec{q},\vec{\dot{q}}\rightarrow\vec{q^*},\vec{\dot{q^*}}$ by applying the constraint equation. Hence, to find the behaviour of the two normal modes, we may do this with the constraint function specified for the normal modes, which takes one parameter: $n$, the \textit{mode coefficient}.
+	
+	This will hopefully give us a \textbf{spectral relation} $\omega_0=\omega_0(n)$, which relates the resonant frequency $\omega_0$ with the mode coefficient $n$. Then, we will try to find a second spectral relation by considering an equivalent system with a different Lagrangian. The two spectral relations form a system of two equations of two unknowns, which we will solve for $\omega_0$.
+	
+	\subsection{Formulation of the Lagrangian}
+	For the antiphase normal mode, we may write the constraint equation as
+	$$\theta_2 = -n\theta_1; n\geq 0, n\in\mathbb{R}$$
+	We substitute this into the expressions for $T$ and $U$ of the double pendulum:
+	\begin{eqnarray*}	
+	T &=&\frac{1}{2}m_1l_1^2\dot{\theta}_1^2+\frac{1}{2}m_2\left(l_1^2\dot{\theta}_1^2+l_2^2\dot{\theta}_2^2+2l_1l_2\dot{\theta}_1\dot{\theta}_2\cos(\theta_1-\theta_2)\right)\\
+	&=&\frac{1}{2}\left[l_1^2(m_1+m_2)+n^2l_2^2m_2-2nl_1l_2m_2\cos(\theta_1(1+n))\right]\dot{\theta}_1^2
+	\end{eqnarray*}
+	\begin{eqnarray*}
+	U &=& -gl_1(m_1+m_2)\cos{\theta_1}-gl_2m_2\cos{\theta_2}-\theta_1l_1F\sin(\omega_Ft)\\
+	&=& -gl_1(m_1+m_2)\cos{\theta_1}-gl_2m_2\cos(n\theta_1)-\theta_1l_1F\sin(\omega_Ft)
+	\end{eqnarray*}
+	Hence the constrained Lagrangian is
+	\begin{eqnarray*}
+	\mathcal{L}^*&=&\frac{1}{2}\left[l_1^2(m_1+m_2)+n^2l_2^2m_2-2nl_1l_2m_2\cos(\theta_1(1+n))\right]\dot{\theta}_1^2\\
+	&&+gl_1(m_1+m_2)\cos{\theta_1}+gl_2m_2\cos(n\theta_1)+\theta_1l_1F\sin(\omega_Ft)
+	\end{eqnarray*}
+	
+	\subsection{The equation of motion}
+	Since we only have one coordinate $\theta_1$ (and its velocity counterpart), we will only have one equation of motion:
+	$$\pdv{\mathcal{L}^*}{\theta_1}-\dv{}{t}\pdv{\mathcal{L}^*}{\dot{\theta}_1}=0$$
+	By direct differentiation, we obtain the two terms:
+	\begin{eqnarray*}
+	\pdv{\mathcal{L}^*}{\theta_1}&=&n(n+1)l_1l_2m_2\dot{\theta}_1^2\sin(\theta_1(1+n))\\
+	&&-gl_1(m_1+m_2)\sin{\theta_1}-ngl_2m_2\sin(n\theta_1)+Fl_1\sin(\omega_Ft)
+	\end{eqnarray*}
+	and
+	\begin{eqnarray*}
+	\dv{}{t}\pdv{\mathcal{L}^*}{\dot{\theta}_1}&=&\left[l_1^2(m_1+m_2)+n^2l_2^2m_2-2nl_1l_2m_2\cos(\theta_1(1+n                   ))\right]\ddot{\theta}_1\\
+	&&+2n(n+1)l_1l_2m_2\dot{\theta}_1^2\sin(\theta_1(1+n))
+	\end{eqnarray*}
+	From these two expressions, we may directly formulate the equation of motion. Since we're interested in the small-angle case, we shall first apply the following first-order small angle approximations, stemming from $\theta_1 = \vartheta\cdot \mbox{Re }p(t)$, where $|p(t)|\approx 1$ is the rotating phasor function and $\vartheta \ll 1$ is the amplitude:
+	\begin{eqnarray*}
+	\sin(k\theta_1)&=&k\theta_1+O(\theta_1^3)\approx k\theta_1\\
+	\dot{\theta}_1^2&=&\vartheta^2 \left(\mbox{Re}p(t)\right)^2 \approx 0\\
+	\cos(k\theta_1)&=&1+O(\theta_1^2)\approx 1
+	\end{eqnarray*}
+	
+	
+\end{document}

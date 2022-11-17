@@ -49,8 +49,6 @@ class analyzer:
     
     # ---------- constructors, destructors, descriptors ----------
     
-    number_of_videos = 0
-    
     def __init__(self, my_dt, my_omega_F, my_external_force_amplitude, dataset_name = ''):
         
         self.pendulums = []
@@ -67,6 +65,7 @@ class analyzer:
         if dataset_name != '':
             dataset_name += '_'
         self.dataset_name = dataset_name
+        self.number_of_videos = 0
         #self.trace_frame = np.zeros((self.o_c_h, self.o_c_w, 3), dtype=np.uint8) + 255
     
     
@@ -74,7 +73,8 @@ class analyzer:
         self.pendulums.append(pendulum)
         if pendulum_name == "__UNNAMED__":
             self.pendulum_names.append("pendulum_" + str(len(self.pendulums)))
-        self.pendulum_names.append(pendulum_name)
+        else:
+            self.pendulum_names.append(pendulum_name)
         if sum(pendulum.l) > self.max_total_length:
             self.max_total_length = sum(pendulum.l)
     
@@ -82,6 +82,12 @@ class analyzer:
     
     def get_force_phasor(self):
         return(np.sin(self.t * self.omega_F))
+    
+    def get_force(self, t, omega_F, amplitude, decay_rate = -1):
+        if decay_rate == -1:
+            return(amplitude * np.sin(t * omega_F))
+        return(amplitude * (1.0 - np.exp( - decay_rate * t)) * np.sin(t * omega_F))
+        
     
     def step(self, cur_external_force_list=0):
         
@@ -169,9 +175,9 @@ class analyzer:
         self.h, self.w = 720, 1280
         self.FPS = 60
         self.fourcc = VideoWriter_fourcc(*'MP42')
-        analyzer.number_of_videos += 1
+        self.number_of_videos += 1
         #self.number_of_videos = 1
-        self.video = VideoWriter('./multipendulum_video_output' + str(analyzer.number_of_videos) + '.avi', self.fourcc, float(self.FPS), (self.w, self.h))
+        self.video = VideoWriter('./' + self.dataset_name + '_video_' + str(self.number_of_videos) + '.avi', self.fourcc, float(self.FPS), (self.w, self.h))
         
         self.output_frames = []
         self.layout_frame = np.zeros((self.h, self.w, 3), dtype=np.uint8) + 255
@@ -219,7 +225,7 @@ class analyzer:
                     position_list[-1][-1].append(pendulum.theta[segment_i])
             
             if np.floor(self.t / max_t * 100) > progress:
-                progress += 1
+                progress = np.floor(self.t / max_t * 100)
                 print("  %i percent done" % progress, end='\r')
         
         print()
@@ -235,7 +241,7 @@ class analyzer:
         progress = 0
         for t_i in range(len(t_list)):
             if np.floor(t_i / len(t_list) * 100) > progress:
-                progress += 1
+                progress = np.floor(self.t / max_t * 100)
                 print("  %i percent done" % progress, end='\r')
             # create frame
             #print("Frame", t_i)
@@ -319,6 +325,7 @@ class analyzer:
             cur_data['omega_F'     ] = []
             cur_data['max_theta_1' ] = []
             cur_data['avg_E'       ] = []
+            cur_data['avg_L'       ] = []
             cur_data['ang_f_theta' ] = empty_list_list(self.pendulums[p_i].N)
             cur_data['ang_f_phi'   ] = empty_list_list(self.pendulums[p_i].N)
             cur_data['hp_theta_std'] = empty_list_list(self.pendulums[p_i].N)
@@ -334,7 +341,7 @@ class analyzer:
                 omega_val = omega_space[omega_i]
                 
                 if np.floor(omega_i / datapoints * 100) > progress:
-                    progress += 1
+                    progress = np.floor(omega_i / datapoints * 100)
                     print(  "  Analysis in progress: " + str(progress) + "%; est. time of finish: " + time.strftime("%H:%M:%S", time.localtime( (time.time()-start_time) * 100 / progress + start_time )), end='\r')
                 
                 self.t = t_start
@@ -346,6 +353,7 @@ class analyzer:
                 
                 max_theta_1 = 0.0
                 avg_E = 0.0
+                avg_L = 0.0
                 total_halfperiods_theta     = np.zeros(self.pendulums[p_i].N)
                 halfperiod_length_std_theta = np.zeros(self.pendulums[p_i].N)
                 total_halfperiods_phi       = np.zeros(self.pendulums[p_i].N)
@@ -367,9 +375,11 @@ class analyzer:
                 
                 number_of_active_cycles = 0
                 
+                decay_rate = -1#1.0/30.0
                 
                 while self.t < t_max:
-                    self.pendulums[p_i].step(self.dt, [cur_external_force_amplitude*np.sin(self.t * omega_val), cur_external_force_amplitude*np.sin((self.t + self.dt/2.0) * omega_val), cur_external_force_amplitude*np.sin((self.t+self.dt) * omega_val)])
+                    #self.pendulums[p_i].step(self.dt, [cur_external_force_amplitude*np.sin(self.t * omega_val), cur_external_force_amplitude*np.sin((self.t + self.dt/2.0) * omega_val), cur_external_force_amplitude*np.sin((self.t+self.dt) * omega_val)])
+                    self.pendulums[p_i].step(self.dt, [self.get_force(self.t, omega_val, cur_external_force_amplitude, decay_rate), self.get_force((self.t + self.dt/2.0), omega_val, cur_external_force_amplitude, decay_rate), self.get_force((self.t + self.dt), omega_val, cur_external_force_amplitude, decay_rate)])
                     self.t += self.dt
                     
                     if self.t > t_threshold:
@@ -380,6 +390,7 @@ class analyzer:
                         
                         T, U, E = self.pendulums[p_i].get_total_energy()
                         avg_E += E
+                        avg_L += self.pendulums[p_i].get_angular_momentum()
                         
                         self.pendulums[p_i].get_phi()
                         if not period_signs_init:
@@ -408,6 +419,7 @@ class analyzer:
                 #print(total_halfperiods_theta, halfperiod_theta_length_list)
                 
                 avg_E /= number_of_active_cycles
+                avg_L /= number_of_active_cycles
                 ang_f_theta = total_halfperiods_theta / (2.0 * (t_max - t_period_threshold_theta)) * 2.0 * np.pi
                 ang_f_phi   = total_halfperiods_phi   / (2.0 * (t_max - t_period_threshold_phi  )) * 2.0 * np.pi
                 for s_i in range(self.pendulums[p_i].N):
@@ -423,6 +435,7 @@ class analyzer:
                 cur_data['omega_F'     ].append(omega_val  )
                 cur_data['max_theta_1' ].append(max_theta_1)
                 cur_data['avg_E'       ].append(avg_E      )
+                cur_data['avg_L'       ].append(avg_L      )
                 for s_i in range(self.pendulums[p_i].N):
                     cur_data['ang_f_theta' ][s_i].append(ang_f_theta[s_i]                )
                     cur_data['ang_f_phi'   ][s_i].append(ang_f_phi[s_i]                  )
@@ -436,6 +449,7 @@ class analyzer:
             cur_data['omega_F'    ] = np.array(cur_data['omega_F'    ])
             cur_data['max_theta_1'] = np.array(cur_data['max_theta_1'])
             cur_data['avg_E'      ] = np.array(cur_data['avg_E'      ])
+            cur_data['avg_L'      ] = np.array(cur_data['avg_L'      ])
             for s_i in range(self.pendulums[p_i].N):
                 cur_data['ang_f_theta' ][s_i] = np.array(cur_data['ang_f_theta' ][s_i])
                 cur_data['ang_f_phi'   ][s_i] = np.array(cur_data['ang_f_phi'   ][s_i])
@@ -465,7 +479,7 @@ class analyzer:
     # ---------------------------- analysis output methods --------------------------
         
     
-    def plot_resonance_analysis_data(self, graph_list=['max_theta_1_graph', 'avg_E_graph', 'ang_f_theta_graph', 'hp_theta_std_graph', 'ang_f_phi_graph', 'hp_phi_std_graph'], names=-1, max_theta_simple_comparison = True, save_graph=False):
+    def plot_resonance_analysis_data(self, graph_list=['max_theta_1_graph', 'avg_E_graph', 'avg_L_graph', 'ang_f_theta_graph', 'hp_theta_std_graph', 'ang_f_phi_graph', 'hp_phi_std_graph'], names=-1, max_theta_simple_comparison = True, save_graph=False):
         
         if names == -1:
             names = self.pendulum_names
@@ -506,6 +520,14 @@ class analyzer:
                     #max_avg_E_index, max_avg_E_amp = max_item(np.abs(np.array(self.pendulum_resonance_analysis_data[p_i]['avg_E'])))
                     max_avg_E_index, max_avg_E_amp = max_item(np.abs(self.pendulum_resonance_analysis_data[p_i]['avg_E']))
                     plt.plot(self.pendulum_resonance_analysis_data[p_i]['omega_F'], self.pendulum_resonance_analysis_data[p_i]['avg_E'] / max_avg_E_amp, '.-', label=self.pendulum_names[p_i] + " data")
+                    for res_f in self.resonant_frequencies[p_i]:
+                        plt.axvline(x=res_f, linestyle='dotted')
+            if graph_list[i] == 'avg_L_graph':
+                plt.title("Time-average angular momentum")
+                plt.xlabel("$\omega_F$ [rad.s$^{-1}$]")
+                plt.ylabel("$\langle L_z\\rangle$ [J$\cdot$s]")
+                for p_i in p_indexes:
+                    plt.plot(self.pendulum_resonance_analysis_data[p_i]['omega_F'], self.pendulum_resonance_analysis_data[p_i]['avg_L'], '.-', label=self.pendulum_names[p_i] + " data")
                     for res_f in self.resonant_frequencies[p_i]:
                         plt.axvline(x=res_f, linestyle='dotted')
             if graph_list[i] == 'ang_f_theta_graph':
@@ -611,7 +633,7 @@ class analyzer:
                     cur_datarow.append(cur_data[key][i])
                 output_writer.writerow( cur_datarow )
             """
-            regular_keys = ['omega_F', 'max_theta_1', 'avg_E']
+            regular_keys = ['omega_F', 'max_theta_1', 'avg_E', 'avg_L']
             ang_f_theta_keys  = []
             ang_f_phi_keys    = []
             hp_theta_std_keys = []

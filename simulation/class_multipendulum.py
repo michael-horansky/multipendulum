@@ -271,6 +271,21 @@ class multipendulum(physical_system):
             acceleration.append( self.get_det_modified_M(n, external_force) / (self.l[n] * det_M) )
         return(acceleration)
     
+    def get_angular_momentum(self):
+        L = 0.0
+        for n in range(self.N):
+            A = 0.0
+            B = 0.0
+            C = 0.0
+            D = 0.0
+            for i in range(n):
+                A += self.l[i] * np.sin(self.theta[i])
+                B += self.l[i] * np.cos(self.theta[i])
+                C += self.theta_dot[i] * self.l[i] * np.sin(self.theta[i])
+                D += self.theta_dot[i] * self.l[i] * np.cos(self.theta[i])
+            L += A * C + B * D
+        return(L)
+    
     
     def step(self, dt, cur_external_force_list):
         

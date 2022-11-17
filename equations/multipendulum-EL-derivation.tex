@@ -1,0 +1,178 @@
+\documentclass[12pt]{article}
+\usepackage{stdheadstart}
+\usepackage{xargs}
+\usepackage{physics}
+\insheadstart{images/}
+
+
+\begin{document}
+
+	\section{The Lagrangian}
+
+	The multipendulum is described by two static parameters $\vec{m}, \vec{l}$, two dynamic parameters $\vec{\theta},\vec{\dot{\theta}}$ (which define the phase space), the number of segments $N$ and gravitational acceleration $\vec{g}=-g\hat{y}$.
+	
+	The vector displacement between the $(n-1)$-th and $n$-th segment is
+	
+	$$\vec{r}_n-\vec{r}_{n-1}=l_n\mqty(\sin{\theta_n} \\ -\cos{\theta_n} \\ 0)$$
+	
+	The position of the $n$-th segment is then
+	$$\vec{r}_n=\sum_{i=1}^n l_i\mqty(\sin{\theta_i} \\ -\cos{\theta_i} \\ 0)=\hat{x}\sum_{i=1}^n l_i \sin{\theta_i}-\hat{y}\sum_{i=1}^n l_i \cos{\theta_i}$$
+	
+	Similarly, the velocity of the $n$-th segment relative to the $(n-1)$-th segment is
+	$$\vec{v}_n-\vec{v}_{n-1}=(\dot{\theta}_n\hat{z})\cross (\vec{r}_n-\vec{r}_{n-1})=\dot{\theta}_n l_n \mqty(\cos{\theta_n} \\ \sin{\theta_n} \\ 0)$$
+	
+	Hence the velocity of the $n$-th segment is then
+	$$\vec{v}_n=\sum_{i=1}^n \dot{\theta}_i l_i \mqty(\cos{\theta_i} \\ \sin{\theta_i} \\ 0) = \hat{x}\sum_{i=1}^n \dot{\theta}_i l_i \cos{\theta_i}+\hat{y}\sum_{i=1}^n \dot{\theta}_i l_i \sin{\theta_i}$$
+	
+	And the square magnitude of that is
+	$$v_n^2=\left(\sum_{i=1}^n \dot{\theta}_i l_i \cos{\theta_i}\right)^2+\left(\sum_{i=1}^n \dot{\theta}_i l_i \sin{\theta_i}\right)^2$$
+	
+	The potential energy of the $n$-th segment due to the uniform gravitational field is
+	$$U_n=-m_n\vec{r}_n\cdot\vec{g}=-m_ng\sum_{i=1}^n l_i \cos{\theta_i}$$
+	
+	Hence the total gravitational potential energy is
+	$$U_g=\sum_{i=1}^N U_i=-\sum_{i=1}^N m_ig\sum_{j=1}^i l_j \cos{\theta_j}$$
+	
+	And the potential energy due to the torque $\tau(t)$ driving the first segment is
+	$$U_\tau = -\tau(t)\theta_1$$
+	
+	Since this force-inducing potential is not a function of $\vec{\dot{\theta}}$, we can absorb it into the Lagrangian. 	Hence the total potential energy is
+	$$U=-\tau(t)\theta_1-\sum_{i=1}^N m_ig\sum_{j=1}^i l_j \cos{\theta_j}$$
+	
+	The kinetic energy of the $n$-th segment is
+	$$T_n=\frac{1}{2}m_nv_n^2=\frac{1}{2}m_n\left(\left(\sum_{i=1}^n \dot{\theta}_i l_i \cos{\theta_i}\right)^2+\left(\sum_{i=1}^n \dot{\theta}_i l_i \sin{\theta_i}\right)^2\right)$$
+	
+	Hence the total kinetic energy is
+	$$T=\sum_{i=1}^N T_i = \sum_{i=1}^N \frac{1}{2}m_i\left(\left(\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}\right)^2+\left(\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}\right)^2\right)$$
+	
+	This yields the Lagrangian of the system:
+	$$L=T-U=\tau(t)\theta_1+\sum_{i=1}^N m_i \left[\frac{1}{2}\left(\left(\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}\right)^2+\left(\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}\right)^2\right)+g\sum_{j=1}^i l_j \cos{\theta_j}\right]$$
+	
+	It is meaningful to define a term $L_n$ as
+	$$L_n=T_n-U_n = m_n\left[\frac{1}{2}\left(\left(\sum_{i=1}^n \dot{\theta}_i l_i \cos{\theta_i}\right)^2+\left(\sum_{i=1}^n \dot{\theta}_i l_i \sin{\theta_i}\right)^2\right)+g\sum_{i=1}^n l_i \cos{\theta_i}\right]$$
+	so that
+	$$L=\tau(t)\theta_1+\sum_{i=1}^NL_i$$
+	
+	\section{The Euler-Lagrange equation}
+	
+	\subsection{The $\pdv{L}{\theta_n}$ term}
+	First, we wish to find the partial derivative $\pdv{L}{\theta_n}$.
+	
+	We notice that $L_i$ is a function of $\theta_1,\theta_2,\dots \theta_i$ and $\dot{\theta}_1,\dot{\theta}_2,\dots \dot{\theta}_i$, in other words, it is invariant to $\theta_n$ iff $n>i$. Hence
+	$$\pdv{L_i}{\theta_n}=0\qq{if}n>i$$
+	
+	Now we can use this to simplify the expression
+	$$\pdv{L}{\theta_n}=\pdv{}{\theta_n}\tau(t)\theta_1+\pdv{\theta_n}\sum_{i=1}^N L_i=\tau(t)\delta_{1n}+\sum_{i=1}^N \pdv{L_i}{\theta_n}=\tau(t)\delta_{1n}+\sum_{i=n}^N \pdv{L_i}{\theta_n}$$
+	where for each sum term in the last expression $i\geq n$, hence all the terms should be nonzero. For these terms we have
+	\begin{eqnarray*}
+	\pdv{L_i}{\theta_n}&=&\pdv{\theta_n}m_i\left[\frac{1}{2}\left(\left(\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}\right)^2+\left(\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}\right)^2\right)+g\sum_{j=1}^i l_j \cos{\theta_j}\right]\\
+	&=&m_i\left[\frac{1}{2}\left(\pdv{A^2}{\theta_n}+\pdv{B^2}{\theta_n}\right)+g\pdv{C}{\theta_n}\right]=m_i\left[A\pdv{A}{\theta_n}+B\pdv{B}{\theta_n}+g\pdv{C}{\theta_n}\right]
+	\end{eqnarray*}
+	where $A,B,C$ are the sums
+	$$A=\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j};\quad B=\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j};\quad C=\sum_{j=1}^i l_j \cos{\theta_j}$$
+	Since $i\geq n$, these sums will have exactly one term for which $j=n$, for which the partial derivative $\pdv{\theta_n}$ is trivial; for all other terms, it is zero. Hence
+	$$\pdv{A}{\theta_n}=\pdv{\theta_n}\dot{\theta}_n l_n \cos{\theta_n}=-\dot{\theta}_n l_n \sin{\theta_n}; \pdv{B}{\theta_n}=\pdv{\theta_n} \dot{\theta}_n l_n \sin{\theta_n}=\dot{\theta}_n l_n \cos{\theta_n}; \pdv{C}{\theta_n}=\pdv{\theta_n} l_n \cos{\theta_n}=-l_n \sin{\theta_n}$$
+	
+	This yields
+	$$\pdv{L_i}{\theta_n}=-m_il_n\left[\dot{\theta}_n  \left(\sin{\theta_n}\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}-\cos{\theta_n}\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}\right)+g \sin{\theta_n}\right]$$
+	
+	From which we have
+	\begin{eqnarray*}
+	\pdv{L}{\theta_n}&=&\tau(t)\delta_{1n}-l_n\sum_{i=n}^N m_i\left[\dot{\theta}_n  \left(\sin{\theta_n}\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}-\cos{\theta_n}\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}\right)+g \sin{\theta_n}\right]\\
+	&=&\tau(t)\delta_{1n}-l_n\sum_{i=n}^N m_i\left[g \sin{\theta_n} + \dot{\theta}_n \sum_{j=1}^i \dot{\theta}_j l_j \left(\sin{\theta_n}\cos{\theta_j}- \cos{\theta_n}\sin{\theta_j}\right)\right]
+	\end{eqnarray*}
+	Using the angle subtraction identity $\sin{\theta_n}\cos{\theta_j}-\cos{\theta_n}\sin{\theta_j}=\sin(\theta_n - \theta_j)$ yields
+	$$\pdv{L}{\theta_n}=\tau(t)\delta_{1n}-l_n\sum_{i=n}^N m_i\left[g \sin{\theta_n} + \dot{\theta}_n \sum_{j=1}^i \dot{\theta}_j l_j \sin(\theta_n - \theta_j)\right]$$
+	\subsection{The $\dv{t}\pdv{L}{\dot{\theta}_n}$ term}
+	
+	First, we need to find $\pdv{L}{\dot{\theta}_n}$. We can use approach analogous to subsection 2.1:
+	$$\pdv{L}{\dot{\theta}_n}=\pdv{}{\dot{\theta}_n}\tau(t)\theta_1+\pdv{\dot{\theta}_n}\sum_{i=1}^N L_i=\sum_{i=1}^N \pdv{L_i}{\dot{\theta}_n}=\sum_{i=n}^N \pdv{L_i}{\dot{\theta}_n}$$
+	where
+	\begin{eqnarray*}
+	\pdv{L_i}{\dot{\theta}_n}&=&\pdv{\dot{\theta}_n}m_i\left[\frac{1}{2}\left(\left(\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}\right)^2+\left(\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}\right)^2\right)+g\sum_{j=1}^i l_j \cos{\theta_j}\right]\\
+	&=&m_i\left[\frac{1}{2}\left(\pdv{A^2}{\dot{\theta}_n}+\pdv{B^2}{\dot{\theta}_n}\right)+g\pdv{C}{\dot{\theta}_n}\right]=m_i\left[A\pdv{A}{\dot{\theta}_n}+B\pdv{B}{\dot{\theta}_n}+g\pdv{C}{\dot{\theta}_n}\right]
+	\end{eqnarray*}
+	where once again
+	$$A=\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j};\quad B=\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j};\quad C=\sum_{j=1}^i l_j \cos{\theta_j}$$
+	and the new derivatives are
+	$$\pdv{A}{\dot{\theta}_n}=\pdv{\dot{\theta}_n}\dot{\theta}_n l_n \cos{\theta_n}=l_n \cos{\theta_n};\quad \pdv{B}{\dot{\theta}_n}=\pdv{\dot{\theta}_n} \dot{\theta}_n l_n \sin{\theta_n}=l_n \sin{\theta_n};\quad \pdv{C}{\dot{\theta}_n}=0$$
+	Hence
+	$$\pdv{L_i}{\dot{\theta}_n}=m_il_n\left[\cos{\theta_n}\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}+ \sin{\theta_n}\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}\right]$$
+	and then
+	$$\pdv{L}{\dot{\theta}_n}=l_n\sum_{i=n}^N m_i\left[\cos{\theta_n}\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}+ \sin{\theta_n}\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}\right]$$
+	Now we want to calculate the time derivative of this expression. For this, we will use the product rule:
+	\begin{eqnarray*}
+	\dv{t}\pdv{L}{\dot{\theta}_n}&=&l_n\dv{t}\sum_{i=n}^N m_i\left[\cos{\theta_n}\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}+ \sin{\theta_n}\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}\right]\\
+	&=&l_n\sum_{i=n}^N m_i\left[\dv{t}\left(\cos{\theta_n}\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}\right)+ \dv{t}\left(\sin{\theta_n}\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}\right)\right]\\
+	&=&l_n\sum_{i=n}^N m_i\left[\dv{\cos{\theta_n}}{t}\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}+\cos{\theta_n}\dv{t}\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}\right.\\
+	&&\qquad\quad\left.+ \dv{\sin{\theta_n}}{t}\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}+\sin{\theta_n} \dv{t}\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}\right]\\
+	&=&l_n\sum_{i=n}^N m_i\left[\dv{\cos{\theta_n}}{t}\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}+\cos{\theta_n}\sum_{j=1}^i l_j\left( \dv{\dot{\theta}_j}{t} \cos{\theta_j} + \dot{\theta}_j \dv{\cos{\theta_j}}{t}\right)\right.\\
+	&&\qquad\quad\left.+ \dv{\sin{\theta_n}}{t}\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}+\sin{\theta_n} \sum_{j=1}^i l_j\left( \dv{\dot{\theta}_j}{t} \sin{\theta_j} + \dot{\theta}_j \dv{\sin{\theta_j}}{t} \right)\right]\\
+	&=&l_n\sum_{i=n}^N m_i\left[-\dot{\theta}_n\sin{\theta_n}\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}+\cos{\theta_n}\sum_{j=1}^i l_j\left( \ddot{\theta}_j \cos{\theta_j} - \dot{\theta}_j^2 \sin{\theta_j}\right)\right.\\
+	&&\qquad\quad\left.+ \dot{\theta}_n\cos{\theta_n}\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}+\sin{\theta_n} \sum_{j=1}^i l_j\left( \ddot{\theta}_j \sin{\theta_j} + \dot{\theta}_j^2 \cos{\theta_j} \right)\right]\\
+	&=&l_n\sum_{i=n}^N m_i\sum_{j=1}^il_j\left[ \cos{\theta_n}\left( \ddot{\theta}_j\cos{\theta}_j+\dot{\theta}_j\left(\dot{\theta}_n-\dot{\theta}_j\right)\sin{\theta}_j \right) + \sin{\theta_n} \left( \ddot{\theta}_j\sin{\theta}_j - \dot{\theta}_j\left(\dot{\theta}_n-\dot{\theta}_j\right)\cos{\theta}_j \right) \right]\\
+	&=&l_n\sum_{i=n}^N m_i\sum_{j=1}^il_j\left[ \ddot{\theta}_j(\cos{\theta_n}\cos{\theta_j}+\sin{\theta_n}\sin{\theta_j})+\dot{\theta}_j(\dot{\theta}_n-\dot{\theta}_j)(\cos{\theta_n}\sin{\theta_j}-\sin{\theta_n}\cos{\theta_j}) \right]\\
+	&=&l_n\sum_{i=n}^N m_i\sum_{j=1}^il_j\left[ \ddot{\theta}_j\cos(\theta_n-\theta_j)-\dot{\theta}_j(\dot{\theta}_n-\dot{\theta}_j)\sin(\theta_n-\theta_j) \right]
+	\end{eqnarray*}
+	\subsection{The resulting Euler-Lagrange equation}
+	The E-L equation is
+	$$\dv{t}\pdv{L}{\dot{\theta}_n}-\pdv{L}{\theta_n}=0$$
+	Plugging our obtained expressions for these terms yields a set of $N$ second-order differential equations:
+	\begin{eqnarray*}
+	l_n\sum_{i=n}^N m_i\left[g \sin{\theta_n} + \sum_{j=1}^il_j\left[ \ddot{\theta}_j\cos(\theta_n-\theta_j)-\dot{\theta}_j(\dot{\theta}_n-\dot{\theta}_j)\sin(\theta_n-\theta_j)   + \dot{\theta}_n \dot{\theta}_j l_j \sin(\theta_n - \theta_j) \right]     \right]\\
+	=\tau(t)\delta_{1n}\qq{for}n=1,2,\dots N
+	\end{eqnarray*}
+	which simplifies to
+	\begin{eqnarray*}
+	l_n\sum_{i=n}^N m_i\left[g \sin{\theta_n} + \sum_{j=1}^il_j\left[ \ddot{\theta}_j\cos(\theta_n-\theta_j)+\dot{\theta}_j^2 \sin(\theta_n-\theta_j) \right]     \right]=\tau(t)\delta_{1n}\qq{for}n=1,2,\dots N
+	\end{eqnarray*}
+	If $l_i = 0$, the system is identical to a multipendulum of order $N-1$ with one segment being of mass $m_{i-1}+m_i$. As this produces a degeneracy, we may safely ignore it. Since $l_n\neq 0\forall n$, we can divide each equation by $l_n$. Let $\tau(t)=l_1F(t)$. The system of equations becomes
+	\begin{eqnarray*}
+	\sum_{i=n}^N m_i\left[g \sin{\theta_n} + \sum_{j=1}^il_j\left[ \ddot{\theta}_j\cos(\theta_n-\theta_j)+\dot{\theta}_j^2 \sin(\theta_n-\theta_j) \right]     \right]=F(t)\delta_{1n}\qq{for}n=1,2,\dots N
+	\end{eqnarray*}
+	
+	This has been checked manually for $N=1$ and $N=2$.
+	
+	\section{Solving for second time derivative terms}
+	
+	To be able to numerically integrate these equations of motion, we need to express $\ddot{\theta}_i$ as $\ddot{\theta}_i(\theta_1,\theta_2,\dots \theta_N, \dot{\theta}_1, \dot{\theta}_2,\dots \dot{\theta}_N)$. For this, we need to formulate the equations in the form
+	$$M\vec{\ddot{\theta}}=\vec{S}$$
+	where $M$ is a square matrix $N\cross N$. The $a$-th equation of motion then becomes
+	$$\vec{M}_a \cdot \ddot{\theta} = S_a \iff \sum_{b=1}^N M_{ab}\ddot{\theta}_b=S_a$$
+	so we see that $M_{ab}$ is the coefficient of $\ddot{\theta}_b$ in the $a$-th equation of motion.
+	
+	Collecting terms in our equations of motion:
+	
+	\begin{eqnarray*}
+	\sum_{i=a}^N m_i\left[\sum_{j=1}^il_j\ddot{\theta}_j\cos(\theta_a-\theta_j) \right]=F(t)\delta_{1a}-\sum_{i=a}^N m_i\left[g \sin{\theta_a} + \sum_{j=1}^il_j \dot{\theta}_j^2 \sin(\theta_a-\theta_j) \right] = S_a
+	\end{eqnarray*}
+	from which we have
+	$$S_a = F(t)\delta_{1a}-\sum_{i=a}^N m_i\left[g \sin{\theta_a} + \sum_{j=1}^il_j \dot{\theta}_j^2 \sin(\theta_a-\theta_j) \right]$$
+	Let's take a look at the sum
+	$$\sum_{i=a}^N m_i\left[\sum_{j=1}^il_j\ddot{\theta}_j\cos(\theta_a-\theta_j) \right]=\sum_{i=a}^N \sum_{j=1}^i X_{ij}\qq{where} X_{ij}=m_il_j\ddot{\theta}_j\cos(\theta_a-\theta_j)$$
+	We now want to swap the order of the summation (into $j$ first, $i$ second), but we need to consider which pairs of indices $i,j$ are present in the sum. For $j<a$, $i$ ranges from $a$ to $N$. For $j\geq a$, $i$ ranges from $j$ to $N$. This allows us to rewrite the sum as
+	\begin{eqnarray*}
+	\sum_{i=a}^N \sum_{j=1}^i X_{ij}=\sum_{j=1}^N \sum_{i=\max(a,j)}^N X_{ij}=\sum_{j=1}^N l_j\ddot{\theta}_j\cos(\theta_a-\theta_j)\sum_{i=\max(a,j)}^N m_i \qq{where} \max(a,j)=\begin{cases}
+			a, & \text{if $a>j$}\\
+      j, & \text{if $a\leq j$}
+		 \end{cases}
+	\end{eqnarray*}
+	From this we see that
+	$$M_{ab}=l_b\cos(\theta_a-\theta_b)\sum_{i=\max(a,b)}^N m_i$$
+	And by applying Cramer's rule, we obtain our desired solution:
+	$$\ddot{\theta}_n=\frac{\det(M_n)}{\det(M)}$$
+	where $M_n$ is $M$ with the $n$-th column by $\vec{S}$.
+	
+	We can simplify the expression further still. Notice that $M$ has a property that $M_{ab}\propto l_b$; in other words, we can write $M$ as
+	$$M=M^*\mqty(\dmat{l_1,l_2,\ddots, l_N})\qq{where} M_{ab}^*=\cos(\theta_a-\theta_b)\sum_{i=\max(a,b)}^N m_i$$
+	Then obviously
+	$$\det(M)=\det(M^*)\prod_{i=1}^Nl_i$$
+	You can convince yourself that
+	$$\det(M_n)=\det(M_n^*)\prod_{i=1,i\neq n}^Nl_i$$
+	Then we can rewrite the result in terms of the simpler matrix $M^*$:
+	$$\ddot{\theta}_n=\frac{\det(M_n^*)}{l_n\det(M^*)}$$
+	Now: consider the matrix element $M_{ba}^*$:
+	$$M_{ba}^*=\cos(\theta_b-\theta_a)\sum_{i=\max(b,a)}^N m_i=\cos(\theta_a-\theta_b)\sum_{i=\max(a,b)}^N m_i=M_{ab}^*$$
+	Hence $M^*$ is symmetric.
+	
+\end{document}

@@ -6,6 +6,7 @@ from class_analyzer import *
 # plotting presets
 ang_f_analysis_preset = ['avg_E_graph', 'ang_f_theta_graph', 'ang_f_theta_space', 'hp_theta_std_graph', 'ang_f_phi_graph', 'ang_f_phi_space', 'hp_phi_std_graph']
 
+mech_resonance_analysis_preset = ['avg_E_graph', 'avg_L_graph', 'max_theta_1_graph'] #how about avg_T? could be interesting. also max_L
 
 
 my_analyzer = analyzer(0.01, 1.0, 0.0)
@@ -20,8 +21,8 @@ p3_big   = multipendulum([5.0, 5.0, 5.0], [5.0, 5.0, 5.0], 9.8)
 
 
 # in state memory, first line is the driving frequency raneg etc, then every line is one state value (state of each pendulum separated by |)
-
-energy_vs_amplitude = analyzer(0.01, 1.0, 2.5, "middle_freq")
+"""
+energy_vs_amplitude = analyzer(0.01, 1.0, 2.5, "middle_freq_decay_10dp")
 
 #energy_vs_amplitude.add_pendulum(p2_small, "double-pendulum")
 energy_vs_amplitude.add_pendulum(p3_small, "triple-pendulum")
@@ -30,9 +31,18 @@ energy_vs_amplitude.add_pendulum(p3_small, "triple-pendulum")
 #energy_vs_amplitude.load_state(25.0, 20.0)
 #energy_vs_amplitude.driving_frequency_analysis(driving_frequency_range=(0.1, 4.0), datapoints=10, t_max = 20.0, t_threshold=15.0, overwrite_stored_states=False)
 
-energy_vs_amplitude.driving_frequency_analysis(driving_frequency_range=(2.0, 2.6), datapoints = 10, t_max = 100.0, t_threshold=80.0)
-#energy_vs_amplitude.load_resonance_analysis_data()
-energy_vs_amplitude.plot_resonance_analysis_data(save_graph=True)
+energy_vs_amplitude.driving_frequency_analysis(driving_frequency_range=(2.0, 2.6), datapoints = 5, t_max = 200.0, t_threshold=150.0)
+#energy_vs_amplitude.save_resonance_analysis_data()
+energy_vs_amplitude.plot_resonance_analysis_data(save_graph=False)
+
+"""
+
+avg_L_analyzer = analyzer(0.01, 1.0, 2.5, "avg_L_analyzer")
+avg_L_analyzer.add_pendulum(p2_small, "small pendulum")
+
+avg_L_analyzer.driving_frequency_analysis(driving_frequency_range=(2.2, 2.7), datapoints=100, t_max = 200.0, t_threshold = 100.0)
+avg_L_analyzer.save_resonance_analysis_data()
+avg_L_analyzer.plot_resonance_analysis_data(mech_resonance_analysis_preset)
 
 """
 p3_small.random_state(np.pi)
