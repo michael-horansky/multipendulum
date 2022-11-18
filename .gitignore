@@ -4,3 +4,8 @@
 *.png
 data/
 __pycache__/
+# we also ignore all latex byproduct files
+*.aux
+*.log
+*.out
+*.gz
