@@ -208,7 +208,11 @@ class multipendulum(physical_system):
         self.theta     = np.array(new_theta    )
         self.theta_dot = np.array(new_theta_dot)
     
+    # ---------------------------------------------------------
     # --------------- physical methods ------------------------
+    # ---------------------------------------------------------
+    
+    # ---------- calculating simple properties ----------------
     
     def get_total_energy(self):
         # we ignore the driving force potential, as it is technically not a potential
@@ -329,10 +333,25 @@ class multipendulum(physical_system):
         eigenvalues, eigenvectors = np.linalg.eig(k)
         # save the results in a property normal_modes, which is a list where each element is a two-element list,
         # first element is the natural frequency and the second element is a list of length N which is the associated eigenvector
-        self.normal_modes = []
+        cur_normal_modes = []
         for i in range(len(eigenvalues)):
-            self.normal_modes.append([np.sqrt(eigenvalues[i]), eigenvectors[:,i]])
-        self.normal_modes.sort(key=lambda x : x[0])
+            cur_normal_modes.append([np.sqrt(eigenvalues[i]), eigenvectors[:,i]])
+        cur_normal_modes.sort(key=lambda x : x[0])
+        # save into normal_modes (eigenvectors) and normal_mode_frequencies (associated frequencies)
+        self.normal_modes = [row[1] for row in cur_normal_modes]
+        self.normal_mode_frequencies = [row[0] for row in cur_normal_modes]
+    
+    def modal_frequency(self, mode):
+        
+        a = 0.0
+        b = 0.0
+        for i in range(self.N):
+            a += self.l[i] * mode[i] * mode[i] * self.get_mu(i)
+            c = 0.0
+            for j in range(i+1):
+                c += mode[j] * self.l[j]
+            b += self.m[i] * c * c
+        return(np.sqrt(self.g * a / b))
     
     
     # --------------- numerical integration methods ------------------------

@@ -45,13 +45,21 @@ avg_L_analyzer.save_resonance_analysis_data()
 avg_L_analyzer.plot_resonance_analysis_data(mech_resonance_analysis_preset)"""
 
 
-triple_p_analyzer = analyzer(0.01, 1.0, 2.5, "middle_freq_no_decay")
+
+p3_small.get_normal_modes()
+a1 = p3_small.modal_frequency(p3_small.normal_modes[0])
+a2 = p3_small.modal_frequency(p3_small.normal_modes[0])
+a3 = p3_small.modal_frequency(p3_small.normal_modes[2])
+print(p3_small.normal_mode_frequencies)
+print(a1, a2, a3)
+
+"""triple_p_analyzer = analyzer(0.05, 1.0, 2.5, "3p_zoom_middle")
 triple_p_analyzer.add_pendulum(p3_small, "3p-small")
 triple_p_analyzer.add_pendulum(p3_big, "3p-big")
-triple_p_analyzer.driving_frequency_analysis(driving_frequency_range=(0.1, 4.0), datapoints=100, t_max = 500.0, t_threshold = 50.0)
-triple_p_analyzer.save_resonance_analysis_data()
+#triple_p_analyzer.driving_frequency_analysis(driving_frequency_range=(1.5, 2.3), datapoints=100, t_max = 500.0, t_threshold = 50.0)
+triple_p_analyzer.load_resonance_analysis_data()
 triple_p_analyzer.plot_resonance_analysis_data(mech_resonance_analysis_preset)
-
+"""
 
 """
 p3_small.random_state(np.pi)

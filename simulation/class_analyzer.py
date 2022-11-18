@@ -305,8 +305,8 @@ class analyzer:
             # Normal modes
             self.pendulums[i].get_normal_modes()
             line = "  normal mode frequencies [rad/s]: "
-            for mode in self.pendulums[i].normal_modes:
-                line += f"{mode[0]:.3f}, "
+            for freq in self.pendulums[i].normal_mode_frequencies:
+                line += f"{freq:.3f}, "
             print(line[:-2])
         
         print("-------------------------------------")
@@ -501,7 +501,9 @@ class analyzer:
                     described = True
                     if 'x' in direction:
                         myplt.axvline(x=datapoint, linestyle=linestyle, label = label, color=color)
-                    if 'y' in direction:
+                        if 'y' in direction:
+                            myplt.axhline(y=datapoint, linestyle=linestyle, color=color)
+                    elif 'y' in direction:
                         myplt.axhline(y=datapoint, linestyle=linestyle, label = label, color=color)
                 else:
                     if 'x' in direction:
@@ -549,7 +551,7 @@ class analyzer:
                 for p_i in p_indexes:
                     plt.plot(self.pendulum_resonance_analysis_data[p_i]['omega_F'], self.pendulum_resonance_analysis_data[p_i]['max_theta_1'], '.-', label=self.pendulum_names[p_i] + " data")
                     self.plot_scalar_list(plt, self.resonant_frequencies[p_i], label=f"{self.pendulum_names[p_i]} resonant f")
-                    self.plot_scalar_list(plt, [row[0] for row in self.pendulums[p_i].normal_modes], linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f")
+                    self.plot_scalar_list(plt, self.pendulums[p_i].normal_mode_frequencies, linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f")
             if graph_list[i] == 'avg_E_graph':
                 plt.title("Time-average mechanical energy")
                 plt.xlabel("$\omega_F$ [rad.s$^{-1}$]")
@@ -558,7 +560,7 @@ class analyzer:
                 for p_i in p_indexes:
                     plt.plot(self.pendulum_resonance_analysis_data[p_i]['omega_F'], self.pendulum_resonance_analysis_data[p_i]['avg_E'], '.-', label=self.pendulum_names[p_i] + " data")
                     self.plot_scalar_list(plt, self.resonant_frequencies[p_i], label=f"{self.pendulum_names[p_i]} resonant f")
-                    self.plot_scalar_list(plt, [row[0] for row in self.pendulums[p_i].normal_modes], linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f")
+                    self.plot_scalar_list(plt, self.pendulums[p_i].normal_mode_frequencies, linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f")
             if graph_list[i] == 'avg_E_ratio_graph':
                 plt.title("Time-average mechanical energy (fraction of max val.)")
                 plt.xlabel("$\omega_F$ [rad.s$^{-1}$]")
@@ -569,7 +571,7 @@ class analyzer:
                     max_avg_E_index, max_avg_E_amp = max_item(np.abs(self.pendulum_resonance_analysis_data[p_i]['avg_E']))
                     plt.plot(self.pendulum_resonance_analysis_data[p_i]['omega_F'], self.pendulum_resonance_analysis_data[p_i]['avg_E'] / max_avg_E_amp, '.-', label=self.pendulum_names[p_i] + " data")
                     self.plot_scalar_list(plt, self.resonant_frequencies[p_i], label=f"{self.pendulum_names[p_i]} resonant f")
-                    self.plot_scalar_list(plt, [row[0] for row in self.pendulums[p_i].normal_modes], linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f")
+                    self.plot_scalar_list(plt, self.pendulums[p_i].normal_mode_frequencies, linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f")
             if graph_list[i] == 'avg_L_graph':
                 plt.title("Time-average angular momentum")
                 plt.xlabel("$\omega_F$ [rad.s$^{-1}$]")
@@ -578,33 +580,35 @@ class analyzer:
                 for p_i in p_indexes:
                     plt.plot(self.pendulum_resonance_analysis_data[p_i]['omega_F'], self.pendulum_resonance_analysis_data[p_i]['avg_L'], '.-', label=self.pendulum_names[p_i] + " data")
                     self.plot_scalar_list(plt, self.resonant_frequencies[p_i], label=f"{self.pendulum_names[p_i]} resonant f")
-                    self.plot_scalar_list(plt, [row[0] for row in self.pendulums[p_i].normal_modes], linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f")
+                    self.plot_scalar_list(plt, self.pendulums[p_i].normal_mode_frequencies, linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f")
             if graph_list[i] == 'ang_f_theta_graph':
                 plt.title("Angular frequencies")
                 #plt.ylim(0, max_ang_f_val * 1.1)
                 plt.xlabel("$\omega_F$ [rad.s$^{-1}$]")
                 plt.ylabel("ang. freq. of seg. [rad.s$^{-1}$]")
                 x_left, x_right = self.last_driving_frequency_range
+                y_left, y_right = self.last_driving_frequency_range
                 for p_i in p_indexes:
                     item = self.pendulum_resonance_analysis_data[p_i]
                     for s_i in range(self.pendulums[p_i].N):
                         plt.plot(item['omega_F'], item['ang_f_theta'][s_i], '.', label=self.pendulum_names[p_i] + " (segment " + str(s_i) + ")")
                     # add resonant frequencies and normal mode frequencies
                     self.plot_scalar_list(plt, self.resonant_frequencies[p_i], label=f"{self.pendulum_names[p_i]} resonant f", direction = 'xy')
-                    self.plot_scalar_list(plt, [row[0] for row in self.pendulums[p_i].normal_modes], linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f", direction='xy')
+                    self.plot_scalar_list(plt, self.pendulums[p_i].normal_mode_frequencies, linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f", direction='xy')
             if graph_list[i] == 'ang_f_phi_graph':
                 plt.title("Angular frequencies of angle differences")
                 #plt.ylim(0, max_ang_f_val * 1.1)
                 plt.xlabel("$\omega_F$ [rad.s$^{-1}$]")
                 plt.ylabel("ang. freq. of seg. ($\phi$) [rad.s$^{-1}$]")
                 x_left, x_right = self.last_driving_frequency_range
+                y_left, y_right = self.last_driving_frequency_range
                 for p_i in p_indexes:
                     item = self.pendulum_resonance_analysis_data[p_i]
                     for s_i in range(self.pendulums[p_i].N):
                         plt.plot(item['omega_F'], item['ang_f_phi'][s_i], '.', label=self.pendulum_names[p_i] + " (segment " + str(s_i) + ")")
                     # add resonant frequencies and normal mode frequencies
                     self.plot_scalar_list(plt, self.resonant_frequencies[p_i], label=f"{self.pendulum_names[p_i]} resonant f", direction = 'xy')
-                    self.plot_scalar_list(plt, [row[0] for row in self.pendulums[p_i].normal_modes], linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f", direction='xy')
+                    self.plot_scalar_list(plt, self.pendulums[p_i].normal_mode_frequencies, linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f", direction='xy')
             """if graph_list[i] == 'ang_f_theta_space':
                 plt.title("Angular frequency space")
                 #border_coefficient = 1.05
@@ -632,7 +636,7 @@ class analyzer:
                         plt.plot(item['omega_F'], item['hp_theta_std'][s_i], '.-', label=self.pendulum_names[p_i] + " (segment " + str(s_i) + ")")
                     # observed resonant frequencies and normal modes
                     self.plot_scalar_list(plt, self.resonant_frequencies[p_i], label=f"{self.pendulum_names[p_i]} resonant f")
-                    self.plot_scalar_list(plt, [row[0] for row in self.pendulums[p_i].normal_modes], linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f")
+                    self.plot_scalar_list(plt, self.pendulums[p_i].normal_mode_frequencies, linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f")
             if graph_list[i] == 'hp_phi_std_graph':
                 plt.title("Standard deviation of half-periods ($\phi$)")
                 plt.xlabel("$\omega_F$ [rad.s$^{-1}$]")
@@ -644,7 +648,7 @@ class analyzer:
                         plt.plot(item['omega_F'], item['hp_phi_std'][s_i], '.-', label=self.pendulum_names[p_i] + " (segment " + str(s_i) + ")")
                     # observed resonant frequencies and normal modes
                     self.plot_scalar_list(plt, self.resonant_frequencies[p_i], label=f"{self.pendulum_names[p_i]} resonant f")
-                    self.plot_scalar_list(plt, [row[0] for row in self.pendulums[p_i].normal_modes], linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f")
+                    self.plot_scalar_list(plt, self.pendulums[p_i].normal_mode_frequencies, linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f")
                     # predicted resonant frequencies
                     #for pred_res_f in predicted_resonant_frequency_list[my_filenames[i]]:
                     #    plt.axvline(x=pred_res_f, linestyle='dotted', color=max_amp_plotline_color_list[my_filenames[i]], label = my_filenames[i] + " predicted res f")
@@ -804,6 +808,6 @@ class analyzer:
         for p_i in range(len(self.pendulums)):
             self.pendulums[p_i].get_normal_modes()
             line = f"  {self.pendulum_names[p_i]} normal mode frequencies [rad/s]: "
-            for mode in self.pendulums[p_i].normal_modes:
-                line += f"{mode[0]:.3f}, "
+            for freq in self.pendulums[p_i].normal_mode_frequencies:
+                line += f"{freq:.3f}, "
             print(line[:-2])
