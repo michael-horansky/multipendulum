@@ -26,6 +26,27 @@ def empty_list_list(length):
         result.append([])
     return(result)
 
+def zero_matrix(d_y, d_x=0):
+    res = []
+    if d_x == 0:
+        d_x = d_y
+    for i in range(d_y):
+        res.append([])
+        for j in range(d_x):
+            res[i].append(0)
+    return(res)
+
+def identity_matrix(d):
+    res = []
+    for i in range(d):
+        res.append([])
+        for j in range(d):
+            if i == j:
+                res[i].append(1.0)
+            else:
+                res[i].append(0.0)
+    return(res)
+
 def nonzero_sign(x):
     if type(x) == list or type(x) == np.ndarray:
         result = np.zeros(len(x))
@@ -207,7 +228,7 @@ class multipendulum(physical_system):
         return(T, U_g, T+U_g)
 
     
-    def get_mu(self, a, b):
+    def get_mu(self, a, b = 0):
         mu = 0
         for i in range(max(a, b), self.N):
             mu += self.m[i]
@@ -286,6 +307,35 @@ class multipendulum(physical_system):
             L += A * C + B * D
         return(L)
     
+    # --------------- theoretical normal modes analysis ------------------------
+    
+    def get_normal_modes(self):
+        
+        # create the k matrix
+        k = zero_matrix(self.N)
+        # populate the edge cases i=j=N and j=N-1,i=N
+        k[self.N-1][self.N-1] = self.g / self.l[self.N-1]
+        if self.N > 1:
+            k[self.N-2][self.N-1] = -(self.g/self.l[self.N-1]) * np.sqrt(self.m[self.N-1]/self.m[self.N-2])
+            k[self.N-1][self.N-2] = k[self.N-2][self.N-1]
+            # populate the main diagonal
+            for i in range(self.N-1):
+                k[i][i] = self.g * (1 / self.l[i] + (self.get_mu(i+1) / self.m[i]) * (1/self.l[i]+1/self.l[i+1]))
+            if self.N > 2:
+                # populate the off-one diagonal
+                for i in range(self.N-2):
+                    k[i+1][i] = -self.g * self.get_mu(i+1) / (self.l[i+1]*np.sqrt(self.m[i]*self.m[i+1]))
+                    k[i][i+1] = k[i+1][i]
+        eigenvalues, eigenvectors = np.linalg.eig(k)
+        # save the results in a property normal_modes, which is a list where each element is a two-element list,
+        # first element is the natural frequency and the second element is a list of length N which is the associated eigenvector
+        self.normal_modes = []
+        for i in range(len(eigenvalues)):
+            self.normal_modes.append([np.sqrt(eigenvalues[i]), eigenvectors[:,i]])
+        self.normal_modes.sort(key=lambda x : x[0])
+    
+    
+    # --------------- numerical integration methods ------------------------
     
     def step(self, dt, cur_external_force_list):
         
