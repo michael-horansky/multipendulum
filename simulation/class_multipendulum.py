@@ -313,6 +313,20 @@ class multipendulum(physical_system):
     
     # --------------- theoretical normal modes analysis ------------------------
     
+    def modes_q_space_into_theta_space(self, modes):
+        if type(modes) == list:
+            new_modes = []
+            for old_mode in modes:
+                new_modes.append(self.modes_q_space_into_theta_space(old_mode))
+            return(new_modes)
+        mode = modes
+        new_mode = []
+        new_mode.append(mode[0] / (self.l[0] * np.sqrt(self.m[0])))
+        for i in range(1, self.N):
+            new_mode.append((mode[i] / np.sqrt(self.m[i]) - mode[i-1] / np.sqrt(self.m[i-1])) / self.l[i])
+        return(new_mode)
+    
+    
     def get_normal_modes(self):
         
         # create the k matrix
@@ -337,8 +351,8 @@ class multipendulum(physical_system):
         for i in range(len(eigenvalues)):
             cur_normal_modes.append([np.sqrt(eigenvalues[i]), eigenvectors[:,i]])
         cur_normal_modes.sort(key=lambda x : x[0])
-        # save into normal_modes (eigenvectors) and normal_mode_frequencies (associated frequencies)
-        self.normal_modes = [row[1] for row in cur_normal_modes]
+        # convert normal modes from q space into theta space and save into normal_modes (eigenvectors) and normal_mode_frequencies (associated frequencies)
+        self.normal_modes = self.modes_q_space_into_theta_space( [row[1] for row in cur_normal_modes] )
         self.normal_mode_frequencies = [row[0] for row in cur_normal_modes]
     
     def modal_frequency(self, mode):
@@ -353,6 +367,46 @@ class multipendulum(physical_system):
             b += self.m[i] * c * c
         return(np.sqrt(self.g * a / b))
     
+    def print_normal_modes(self):
+        
+        if self.N == 1:
+            line = ""
+            for i in range(self.N):
+                line += f"v_{i+1} = ({self.normal_modes[i][i]:.3f}), omega_{i+1} = {self.normal_mode_frequencies[i]:.3f}; "
+            print(line[:-2])
+        else:
+            main_i = int(np.ceil(self.N/2.0)-1)
+            v_lens = []
+            w_lens = []
+            for i in range(self.N):
+                w_lens.append(len(f"{self.normal_mode_frequencies[i]:.3f}"))
+                v_lens.append(len(f"{self.normal_modes[i][0]:.3f}"))
+                for j in range(1, self.N):
+                    cur_len = len(f"{self.normal_modes[i][j]:.3f}")
+                    if cur_len > v_lens[-1]:
+                        v_lens[-1] = cur_len
+            
+            for i in range(self.N):
+                if i == 0:
+                    cur_left = '/'
+                    cur_right = "\\"
+                elif i == self.N - 1:
+                    cur_left = "\\"
+                    cur_right = "/"
+                else:
+                    cur_left = '|'
+                    cur_right = '|'
+                line = ""
+                for j in range(self.N):
+                    cur_v_len = len(f"{self.normal_modes[j][i]:.3f}")
+                    #cur_w_len = len(f"{self.normal_mode_frequencies[j]:.3f}")
+                    
+                    if i == main_i:
+                        line += f"v_{j+1} = {cur_left}{' ' * (v_lens[j] - cur_v_len)}{self.normal_modes[j][i]:.3f}{cur_right}, omega_{j+1} = {self.normal_mode_frequencies[j]:.3f}; "
+                    else:
+                        line += f"      {cur_left}{' ' * (v_lens[j] - cur_v_len)}{self.normal_modes[j][i]:.3f}{cur_right}       {' ' * w_lens[j]}       "
+                print(line[:-2])
+                
     
     # --------------- numerical integration methods ------------------------
     

@@ -106,6 +106,30 @@ def create_k_matrix(N, m, l, g):
                 k[i][i+1] = k[i+1][i]
     return(k)
 
+def mode_q_space_into_theta_space(N, m, l, g, mode):
+    new_mode = []
+    new_mode.append(mode[0] / (l[0] * sp.sqrt(m[0])))
+    for i in range(1, N):
+        new_mode.append((mode[i] / sp.sqrt(m[i]) - mode[i-1] / sp.sqrt(m[i-1])) / l[i])
+    return(new_mode)
+    
+
+
+def modal_frequency(N, m, l, g, mode = -1):
+    
+    if mode == -1:
+        mode = []
+        for i in range(N):
+            mode.append(sp.parse_expr(f"u_{1+i}"))
+    a = 0.0
+    b = 0.0
+    for i in range(N):
+        a += l[i] * mode[i] * mode[i] * mu(m, i, N)
+        c = 0.0
+        for j in range(i+1):
+            c += mode[j] * l[j]
+        b += m[i] * c * c
+    return(sp.sqrt(g * a / b))
 
 # -------------------------------------------------------------------------------------
 # ----------------------------- OUTPUT FUNCTIONS --------------------------------------
@@ -186,27 +210,43 @@ def mp_normal_modes(N, m=0, l=0):
     assume_real_positive(l)
     assume_real_positive([g])
     
+    # modal frequency
+    print("Calculating the modal frequency...")
+    m_f = modal_frequency(N, m, l, g)
+    print("omega(u) =")
+    sp.pprint(m_f, use_unicode = False)
+    
     # Now, create the k matrix
     
     k = create_k_matrix(N, m, l, g)
+    print()
+    print("k = ")
     print_matrix(k)
     
     k_M = Matrix(k.copy())
     k_M_eigenvectors_raw = k_M.eigenvects(simplify=True)
-    modes, f_sq = unwrap_eigenvectors(k_M_eigenvectors_raw, refine_expr = True)
+    modes_q, f_sq = unwrap_eigenvectors(k_M_eigenvectors_raw, refine_expr = True)
+    modes = []
+    for i in range(len(modes_q)):
+        modes.append(mode_q_space_into_theta_space(N, m, l, g, modes_q[i]))
     res_freq = []
     for i in range(len(f_sq)):
         res_freq.append(sp.simplify(sp.sqrt(f_sq[i])))
-    print("Resonant frequencies:")
+    print("Normal modes and resonant frequencies:")
     for i in range(len(res_freq)):
-        print(f"  omega_{i+1} = {res_freq[i]}")
+        print(f"  omega_{i+1} =")
+        sp.pprint(res_freq[i], use_unicode = False)
+        for j in range(len(modes[i])):
+            print(f"  v_[{i+1},{j+1}] =")
+            sp.pprint(sp.simplify(modes[i][j]))
+    
     
 
 N = int(input("Number of segments in the multipendulum: "))
 print("all segments equal:")
 mp_normal_modes(N, ['m']*N, ['l']*N)
 
-print("general case:")
-mp_normal_modes(N)
+#print("general case:")
+#mp_normal_modes(N)
 
 

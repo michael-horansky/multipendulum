@@ -46,12 +46,15 @@ avg_L_analyzer.plot_resonance_analysis_data(mech_resonance_analysis_preset)"""
 
 
 
+print("Modal frequency on normal modes compared to normal mode frequencies sanity check:")
 p3_small.get_normal_modes()
+
+p3_small.print_normal_modes()
+
 a1 = p3_small.modal_frequency(p3_small.normal_modes[0])
-a2 = p3_small.modal_frequency(p3_small.normal_modes[0])
+a2 = p3_small.modal_frequency(p3_small.normal_modes[1])
 a3 = p3_small.modal_frequency(p3_small.normal_modes[2])
-print(p3_small.normal_mode_frequencies)
-print(a1, a2, a3)
+print(f"modal freq. analysis: omega_1 = {a1}, omega_2 = {a2}, omega_3 = {a3}")
 
 """triple_p_analyzer = analyzer(0.05, 1.0, 2.5, "3p_zoom_middle")
 triple_p_analyzer.add_pendulum(p3_small, "3p-small")
