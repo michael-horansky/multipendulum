@@ -46,7 +46,8 @@ avg_L_analyzer.plot_resonance_analysis_data(mech_resonance_analysis_preset)"""
 
 
 
-p2_small.plot_mode_portrait()
+#p2_small.dp_plot_mode_portrait()
+p3_small.tp_plot_mode_portrait()
 
 
 

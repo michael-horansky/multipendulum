@@ -495,7 +495,7 @@ class multipendulum(physical_system):
                 print(line[:-2])
     
     
-    def plot_mode_portrait(self, ranges=[[-1.0, 1.0], [-1.0, 1.0]], graining=256, force_graining = 25):
+    def dp_plot_mode_portrait(self, ranges=[[-1.0, 1.0], [-1.0, 1.0]], graining=256, force_graining = 25):
         # ranges[N][2] = [[u_1_min, u_1_max]...]. Default value -1.0:1.0 everywhere
         # graining = number of datapoints in meshgrid along each dimension
         
@@ -567,6 +567,7 @@ class multipendulum(physical_system):
                 q_2_list[1][-1].append(cur_P_2[1][1])
             
         fig, ax = plt.subplots()
+        #plt.figure(figsize=(12, 8))
         plt.xlim(ranges[0][0], ranges[0][1])
         plt.ylim(ranges[1][0], ranges[1][1])
         plt.xlabel('$u_1$')
@@ -597,12 +598,144 @@ class multipendulum(physical_system):
         
         pos = ax.get_position()
         ax.set_position([pos.x0, pos.y0, pos.width, pos.height * 1.0])
-        ax.legend(lines[:self.N], nm_labels, loc='center right', ncol=self.N, frameon=False, columnspacing=0.8, bbox_to_anchor=(1.27, 1.1))
-        leg = Legend(ax, lines[self.N:], ['$\\vec{{Q}}$', '$\\nabla Q_1$', '$\\nabla Q_2$'],
-             loc='center right', ncol=3, frameon=False, columnspacing=0.8, bbox_to_anchor=(1.27, 1.05))
-        ax.add_artist(leg)
+        ax.legend(loc='center right', ncol=self.N + 3, frameon=False, columnspacing=0.8, bbox_to_anchor=(1.27, 1.1))
+        #ax.legend(lines[:self.N], nm_labels, loc='center right', ncol=self.N, frameon=False, columnspacing=0.8, bbox_to_anchor=(1.27, 1.1))
+        #leg = Legend(ax, lines[self.N:], ['$\\vec{{Q}}$', '$\\nabla Q_1$', '$\\nabla Q_2$'], loc='center right', ncol=3, frameon=False, columnspacing=0.8, bbox_to_anchor=(1.27, 1.05))
+        #ax.add_artist(leg)
         plt.show()
     
+    def tp_plot_mode_portrait(self, R=0.01, graining=256, force_graining = 25):
+        # mode portrait for a triple pendulum - take a sphere of radius R and project onto a 2D surface
+        # x = phi, y = theta
+        
+        # ASSUME N = 3
+        def spherical_modal_frequency(phi, theta):
+            u1 = R * np.sin(theta) * np.cos(phi)
+            u2 = R * np.sin(theta) * np.sin(phi)
+            u3 = R * np.cos(theta)
+            
+            top = self.g * (self.l[0] * u1 * u1 * (self.m[0] + self.m[1] + self.m[2]) + self.l[1] * u2 * u2 * (self.m[1] + self.m[2]) + self.l[2] * u3 * u3 * self.m[2])
+            bottom = self.m[0] * u1 * u1 * self.l[0] * self.l[0] + self.m[1] * (u1 * self.l[0] + u2 * self.l[1]) * (u1 * self.l[0] + u2 * self.l[1]) + self.m[2] * (u1 * self.l[0] + u2 * self.l[1] + u3 * self.l[2]) * (u1 * self.l[0] + u2 * self.l[1] + u3 * self.l[2])
+            return(np.sqrt(top / bottom))
+        
+        def c_to_s_transform(v):
+            return([np.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]), np.arctan2(np.sqrt(v[0]*v[0]+v[1]*v[1]),v[2]), np.arctan2(v[1],v[0])])
+        def s_to_c_transform(v):
+            return([v[0] * np.sin(v[1]) * np.cos(v[2]), v[0] * np.sin(v[1]) * np.sin(v[2]), v[0] * np.cos(v[1])])
+        
+        def spherical_constraint_forces(phi, theta):
+            cur_mode = s_to_c_transform(R, theta, phi)
+            cur_constraint_forces = self.get_constraint_forces(cur_mode)
+            c_forces = c_to_s_transform(cur_constraint_forces)
+            return([c_forces[2], c_forces[1]]) #[phi, theta]
+        
+        def old_spherical_constraint_force_gradient(phi, theta):
+            cur_mode = s_to_c_transform([R, theta, phi])
+            print(cur_mode)
+            cur_constraint_force_gradient_matrix = self.get_constraint_force_gradient_matrix(cur_mode)
+            print(cur_constraint_force_gradient_matrix)
+            c_force_gradient_matrix = []
+            for i in range(len(cur_constraint_force_gradient_matrix)):
+                cur_force_gradient = c_to_s_transform(cur_constraint_force_gradient_matrix[i])
+                c_force_gradient_matrix.append([cur_force_gradient[2], cur_force_gradient[1]])
+            return(c_force_gradient_matrix)
+        
+        def log_v(v):
+            # rescales vector in log scale
+            res = v.copy()
+            v_size = np.sqrt(inner_product(v, v))
+            v_log_size = np.log(v_size)
+            for i in range(len(v)):
+                res[i] = v[i] * v_log_size / v_size
+            return(res)
+            # res = v / |v| * log(|v|)
+        
+        def spherical_constraint_force_gradient(phi, theta):
+            cur_mode = s_to_c_transform([R, theta, phi])
+            cur_constraint_force_gradient_matrix = self.get_constraint_force_gradient_matrix(cur_mode)
+            c_force_gradient_matrix = []
+            for i in range(len(cur_constraint_force_gradient_matrix)):
+                grad_q_i = cur_constraint_force_gradient_matrix[i]
+                cur_phi = - grad_q_i[0] * np.sin(phi) + grad_q_i[1] * np.cos(theta)
+                cur_theta = grad_q_i[0] * np.cos(phi) * np.cos(theta) + grad_q_i[1] * np.sin(phi) * np.cos(theta) - grad_q_i[2] * np.sin(theta)
+                c_force_gradient_matrix.append(log_v([cur_phi, cur_theta]))
+            return(c_force_gradient_matrix)
+        
+        def plus_pi(x):
+            res = x + np.pi
+            if res >= 2.0 * np.pi:
+                res -= 2.0 * np.pi
+            return(res)
+        
+        self.get_normal_modes()
+        self.print_normal_modes()
+            
+        # the modal frequency scalar field
+        
+        phi_space   = np.linspace(0.0,2.0 * np.pi,graining)
+        theta_space = np.linspace(0.0,np.pi      ,graining)
+        #x_q = np.linspace(ranges[0][0],ranges[0][1],force_graining)
+        #y_q = np.linspace(ranges[1][0],ranges[1][1],force_graining)
+        
+        phi_mesh, theta_mesh = np.meshgrid(phi_space, theta_space)
+        omega_mesh = spherical_modal_frequency(phi_mesh, theta_mesh)
+        
+        # the normal modes and force gradient
+        normal_mode_phi_list = []
+        normal_mode_theta_list = []
+        
+        gq_phi_list = []
+        gq_theta_list = []
+        grad_q_phi_list = [[], [], []]
+        grad_q_theta_list = [[], [], []]
+        for i in range(len(self.normal_modes)):
+            mode = self.normal_modes[i]
+            s_mode = c_to_s_transform(mode)
+            
+            grad_q_m_1 = spherical_constraint_force_gradient(s_mode[2], s_mode[1])
+            grad_q_m_2 = spherical_constraint_force_gradient(plus_pi(s_mode[2]), np.pi-s_mode[1])
+            
+            normal_mode_phi_list.append([s_mode[2], plus_pi(s_mode[2])])
+            normal_mode_theta_list.append([s_mode[1], np.pi-s_mode[1]])
+            
+            gq_phi_list.append(s_mode[2])
+            gq_theta_list.append(s_mode[1])
+            gq_phi_list.append(plus_pi(s_mode[2]))
+            gq_theta_list.append(np.pi-s_mode[1])
+            
+            for i in range(self.N):
+                grad_q_phi_list[i].append(grad_q_m_1[i][0])
+                grad_q_theta_list[i].append(grad_q_m_1[i][1])
+                grad_q_phi_list[i].append(grad_q_m_2[i][0])
+                grad_q_theta_list[i].append(grad_q_m_2[i][1])
+        
+        fig, ax = plt.subplots()
+        plt.xlim(0.0, 2.0 * np.pi)
+        plt.ylim(0.0, np.pi)
+        plt.xlabel('$\\phi$ (equal to $\\arctan(u_y/u_x)$)')
+        plt.ylabel('$\\theta$ (equal to $\\arccos(u_z/|\\vec{u}|)$)')
+        
+        pcm = plt.pcolormesh(phi_mesh, theta_mesh, omega_mesh, cmap='RdBu_r')
+        plt.colorbar(pcm, label='$\omega(\\vec{u})$')
+        
+        normal_mode_colours = ['#ff6699', '#66ff33', '#009999']
+        
+        for i in range(len(self.normal_modes)):
+            nm_label = f'$v_{i+1}, \\omega_{i+1}={self.normal_mode_frequencies[i]:.2f}$ rad.s$^{{-1}}$'
+            plt.scatter(normal_mode_phi_list[i], normal_mode_theta_list[i], s=80, label=nm_label, color=normal_mode_colours[i], edgecolor='black', linewidth = 1)
+        
+        grad_q_colors = ['red', 'black', 'yellow']
+        for i in range(self.N):
+            """if i == 0:
+                    plt.quiver(gq_phi_list, y_list[i], q_1_list[0][i], q_1_list[1][i], color='white', edgecolor='red', linewidth = 1, label='$\\nabla Q_1$')
+                    plt.quiver(x_list[i] + 0.5 * (x_q[1] - x_q[0]), y_list[i] + 0.5 * (x_q[1] - x_q[0]) * self.normal_modes[i][1] / self.normal_modes[i][0], q_2_list[0][i], q_2_list[1][i], color='white', edgecolor='black', linewidth = 1, label='$\\nabla Q_2$')
+                else:"""
+            plt.quiver(gq_phi_list, gq_theta_list, grad_q_phi_list[i], grad_q_theta_list[i], color='white', edgecolor=grad_q_colors[i], linewidth = 1, scale = 50, label=f'$\\nabla Q_{i+1}$ (log scale)')
+        
+        pos = ax.get_position()
+        ax.set_position([pos.x0, pos.y0, pos.width, pos.height * 1.0])
+        ax.legend(loc='center right', ncol=self.N, frameon=False, columnspacing=0.8, bbox_to_anchor=(1.1, 1.08))
+        plt.show()
                 
     
     # --------------- numerical integration methods ------------------------
