@@ -1,0 +1,47 @@
+\documentclass[12pt]{article}
+\usepackage{stdheadstart}
+\usepackage{xargs}
+\usepackage{physics}
+\usepackage{amsmath}
+\insheadstart{images/}
+
+
+\begin{document}
+
+	\section{1st order correction for the driven normal modes}
+	
+	LETSGOOO
+	
+	\subsection{Mode space}
+	The \textit{mode space} is a space spanning mode evolutions of the system. It's defined as $\vec{u}\in \mathbf{R}^N$ where the modevector $\vec{u}$ has the physical significance of the following set of holonomic constraints:
+	$$\vec{\theta}(t)=\vec{u}e^{i\omega(\vec{u})t}$$
+	This set of constraints shall be referred to as the \textit{mode constraint}.
+	
+	\subsection{Modal frequency}
+	Every mode has its frequency. By applying the mode constraint to the Lagrangian, we reduce it to a single coordinate (let's say $\theta_1$), and its associated E-L equation is the equation of a simple harmonic oscillator:
+	$$\theta_1 \frac{g}{u_1^2}\sum_{i=1}^N l_1 u_i^2 \mu_i + \ddot{\theta}_1 \frac{1}{u_1^2}\sum_{i=1}^N m_i\left(\sum_{j=1}^i u_j l_j\right)^2=0$$
+	This recovers the expected solution in the form $\theta_1 \propto e^{i\omega(\vec{u})t}$, where
+	$$\omega(\vec{u})=\left[\frac{g\sum\limits_{i=1}^N l_i u_i^2 \mu_i}{\sum\limits_{i=1}^N m_i\left(\sum\limits_{j=1}^i u_j l_j\right)^2}\right]^\frac{1}{2}$$
+	We can verify that $\omega(c\vec{u})=\omega(\vec{u})$, hence in the mode space, points on a line passing through the origin all have constant associated frequency. Lines through the origin are isofrequenths.
+	
+	For a normal mode $\vec{v}_n$, we can verify that $\omega(\vec{v}_n)=\omega_n$, and the function recovers the associated normal mode frequency.
+	
+	\subsection{Constraint forces}
+	For holonomic constraints, we have
+	$$Q_i=\dv{}{t}\left(\pdv{L}{\dot{\theta}_i}\right)-\pdv{L}{\theta_i}$$
+	Remember that Lagrangian perturbed to 2nd order about the equilibrium:
+	$$L=\frac{1}{2}\sum\limits_{x=1}^N m_x\left(\sum_{y=1}^x \dot{\theta}_y l_y\right)^2-\frac{1}{2}g\sum_{x=1}^N l_x \theta_x^2 \mu_x$$
+	By solving the equation and utilizing $\sum\limits_{x=i}^N\sum\limits_{y=1}^x A_{xy}=\sum\limits_{y=1}^N\sum\limits_{x=\max(i,y)}^N A_{xy}$ we obtain
+	$$Q_i = l_i\left[ g\theta_i\mu_i + \sum_{x=1}^N \ddot{\theta}_x l_x \mu_{\max(i,x)} \right]$$
+	Now we substitute in the mode constraint and recover
+	$$Q_i(\vec{u}) = l_i e^{i\omega(\vec{u})t}\left[ g u_i\mu_i - \sum_{x=1}^N \omega(\vec{u})^2 u_x l_x \mu_{\max(i,x)} \right]$$
+	We can verify that for a normal mode $\vec{v}_n$, the constraint forces vanish: $Q_i(\vec{v}_n)=0$. This recovers the original E-L equations and is therefore consistent with their solutions.
+	
+	\subsection{Gradient of constraint forces}
+	The gradient of the $i$-th constraint force is a vector such that
+	$$\grad Q_i(\vec{u})=\mqty(\pdv{Q_i}{u_1} \\ \pdv{Q_i}{u_2} \\ \vdots \\ \pdv{Q_i}{u_N})$$
+	We can see that
+	$$\pdv{Q_i}{u_j}= l_i\left( g\mu_i\delta_{ij} - \omega(\vec{u})^2  l_j \mu_{\max(i,j)} \right)$$
+	We see that all dependence on $c$ vanishes (since $\omega(c\vec{v}_n)=\omega(\vec{v}_n)$), hence \textbf{the gradient will be constant on the isofrequenth} (that makes great sense from the perspective of physical interpretation of modes - we require scale symmetry).
+	
+\end{document}
