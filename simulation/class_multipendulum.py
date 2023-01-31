@@ -536,7 +536,7 @@ class multipendulum(physical_system):
                 cur_constraint_forces = self.get_constraint_forces([x_val, y_val])
                 u_mag = np.sqrt(x_val * x_val + y_val * y_val)
                 q1_results[-1].append(cur_constraint_forces[0])
-                q2_results[-1].append(cur_constraint_forces[0])
+                q2_results[-1].append(cur_constraint_forces[1])
                 #colors[-1].append(a_func(x_val, v_val)+v_val)
                 colors[-1].append( 1.0 )
         
@@ -622,12 +622,23 @@ class multipendulum(physical_system):
             return([np.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]), np.arctan2(np.sqrt(v[0]*v[0]+v[1]*v[1]),v[2]), np.arctan2(v[1],v[0])])
         def s_to_c_transform(v):
             return([v[0] * np.sin(v[1]) * np.cos(v[2]), v[0] * np.sin(v[1]) * np.sin(v[2]), v[0] * np.cos(v[1])])
+        def local_projection(phi, theta, vec):
+            # projection of the vector onto a surface locally tangential to the sphere
+            cur_phi = - vec[0] * np.sin(phi) + vec[1] * np.cos(theta)
+            cur_theta = vec[0] * np.cos(phi) * np.cos(theta) + vec[1] * np.sin(phi) * np.cos(theta) - vec[2] * np.sin(theta)
+            return([cur_phi, cur_theta]) #unnormalized - real delta phi, delta theta would have a 1/R factor
         
-        def spherical_constraint_forces(phi, theta):
-            cur_mode = s_to_c_transform(R, theta, phi)
+        def old_spherical_constraint_forces(phi, theta):
+            cur_mode = s_to_c_transform([R, theta, phi])
             cur_constraint_forces = self.get_constraint_forces(cur_mode)
             c_forces = c_to_s_transform(cur_constraint_forces)
             return([c_forces[2], c_forces[1]]) #[phi, theta]
+        
+        def spherical_constraint_forces(phi, theta):
+            cur_mode = s_to_c_transform([R, theta, phi])
+            cur_constraint_forces = self.get_constraint_forces(cur_mode)
+            # now we project the force onto a surface locally tangential to the sphere
+            return(local_projection(phi, theta, cur_constraint_forces)) #[phi, theta]
         
         def old_spherical_constraint_force_gradient(phi, theta):
             cur_mode = s_to_c_transform([R, theta, phi])
@@ -656,9 +667,7 @@ class multipendulum(physical_system):
             c_force_gradient_matrix = []
             for i in range(len(cur_constraint_force_gradient_matrix)):
                 grad_q_i = cur_constraint_force_gradient_matrix[i]
-                cur_phi = - grad_q_i[0] * np.sin(phi) + grad_q_i[1] * np.cos(theta)
-                cur_theta = grad_q_i[0] * np.cos(phi) * np.cos(theta) + grad_q_i[1] * np.sin(phi) * np.cos(theta) - grad_q_i[2] * np.sin(theta)
-                c_force_gradient_matrix.append(log_v([cur_phi, cur_theta]))
+                c_force_gradient_matrix.append(log_v(local_projection(phi, theta, grad_q_i)))
             return(c_force_gradient_matrix)
         
         def plus_pi(x):
@@ -674,11 +683,22 @@ class multipendulum(physical_system):
         
         phi_space   = np.linspace(0.0,2.0 * np.pi,graining)
         theta_space = np.linspace(0.0,np.pi      ,graining)
-        #x_q = np.linspace(ranges[0][0],ranges[0][1],force_graining)
-        #y_q = np.linspace(ranges[1][0],ranges[1][1],force_graining)
+        phi_q   = np.linspace(0.0,2.0 * np.pi,force_graining)
+        theta_q = np.linspace(0.0,np.pi      ,force_graining)
         
         phi_mesh, theta_mesh = np.meshgrid(phi_space, theta_space)
         omega_mesh = spherical_modal_frequency(phi_mesh, theta_mesh)
+        
+        # the constraint forces
+        phi_results = []
+        theta_results = []
+        for theta_val in theta_q:
+            phi_results.append([])
+            theta_results.append([])
+            for phi_val in phi_q:
+                cur_constraint_forces = spherical_constraint_forces(phi_val, theta_val)
+                phi_results[-1].append(cur_constraint_forces[0])
+                theta_results[-1].append(cur_constraint_forces[1])
         
         # the normal modes and force gradient
         normal_mode_phi_list = []
@@ -718,11 +738,13 @@ class multipendulum(physical_system):
         pcm = plt.pcolormesh(phi_mesh, theta_mesh, omega_mesh, cmap='RdBu_r')
         plt.colorbar(pcm, label='$\omega(\\vec{u})$')
         
+        plt.quiver(phi_q, theta_q, phi_results, theta_results, label='$\\vec{{Q}}$ projection')
+        
         normal_mode_colours = ['#ff6699', '#66ff33', '#009999']
         
         for i in range(len(self.normal_modes)):
             nm_label = f'$v_{i+1}, \\omega_{i+1}={self.normal_mode_frequencies[i]:.2f}$ rad.s$^{{-1}}$'
-            plt.scatter(normal_mode_phi_list[i], normal_mode_theta_list[i], s=80, label=nm_label, color=normal_mode_colours[i], edgecolor='black', linewidth = 1)
+            plt.scatter(normal_mode_phi_list[i], normal_mode_theta_list[i], s=150, label=nm_label, color=normal_mode_colours[i], edgecolor='black', linewidth = 1)
         
         grad_q_colors = ['red', 'black', 'yellow']
         for i in range(self.N):
@@ -730,11 +752,11 @@ class multipendulum(physical_system):
                     plt.quiver(gq_phi_list, y_list[i], q_1_list[0][i], q_1_list[1][i], color='white', edgecolor='red', linewidth = 1, label='$\\nabla Q_1$')
                     plt.quiver(x_list[i] + 0.5 * (x_q[1] - x_q[0]), y_list[i] + 0.5 * (x_q[1] - x_q[0]) * self.normal_modes[i][1] / self.normal_modes[i][0], q_2_list[0][i], q_2_list[1][i], color='white', edgecolor='black', linewidth = 1, label='$\\nabla Q_2$')
                 else:"""
-            plt.quiver(gq_phi_list, gq_theta_list, grad_q_phi_list[i], grad_q_theta_list[i], color='white', edgecolor=grad_q_colors[i], linewidth = 1, scale = 50, label=f'$\\nabla Q_{i+1}$ (log scale)')
+            plt.quiver(gq_phi_list, gq_theta_list, grad_q_phi_list[i], grad_q_theta_list[i], color='white', edgecolor=grad_q_colors[i], linewidth = 1, scale = 50, label=f'$\\nabla Q_{i+1}$ (log)')
         
         pos = ax.get_position()
         ax.set_position([pos.x0, pos.y0, pos.width, pos.height * 1.0])
-        ax.legend(loc='center right', ncol=self.N, frameon=False, columnspacing=0.8, bbox_to_anchor=(1.1, 1.08))
+        ax.legend(loc='center right', ncol=self.N +1, frameon=False, columnspacing=0.8, bbox_to_anchor=(1.3, 1.08))
         plt.show()
                 
     
