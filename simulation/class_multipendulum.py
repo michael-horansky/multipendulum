@@ -1,7 +1,11 @@
 
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.legend import Legend
 
 import time
+
+from linalg_funcs import *
 
 def list_to_str(my_list, unit_str = '', separation_str = ', '):
     if len(my_list) == 0:
@@ -357,6 +361,8 @@ class multipendulum(physical_system):
     
     def modal_frequency(self, mode):
         
+        if inner_product(mode, mode) == 0.0:
+            return(self.normal_mode_frequencies[0])
         a = 0.0
         b = 0.0
         for i in range(self.N):
@@ -366,6 +372,87 @@ class multipendulum(physical_system):
                 c += mode[j] * self.l[j]
             b += self.m[i] * c * c
         return(np.sqrt(self.g * a / b))
+    
+    def get_constraint_forces(self, mode):
+        
+        if inner_product(mode, mode) == 0.0:
+            return(mode.copy())
+        
+        # returns vec(Q) as a function of mode
+        mode_freq = self.modal_frequency(mode)
+        Q_res = []
+        for i in range(self.N):
+            cur_Q = self.g * mode[i] * self.get_mu(i)
+            for x in range(self.N):
+                cur_Q -= mode_freq * mode_freq * mode[x] * self.l[x] * self.get_mu(i, x)
+            Q_res.append(self.l[i] * cur_Q)
+        return(Q_res)
+    
+    def get_constraint_force_gradient_matrix(self, mode):
+        # returns [[dQ_1/du_1, dQ_1/du_2... dQ_1/du_N], [dQ_2/du_1, dQ_2/du_2... dQ_2/du_N]...]
+        P = []
+        cur_modal_freq = self.modal_frequency(mode)
+        for i in range(self.N):
+            P.append([])
+            for j in range(self.N):
+                if i == j:
+                    P[i].append(self.l[i] * (self.g - cur_modal_freq * cur_modal_freq * self.l[j]) * self.get_mu(i) )
+                else:
+                    P[i].append(- self.l[i] * cur_modal_freq * cur_modal_freq * self.l[j] * self.get_mu(i, j) )
+        return(P)
+    
+    def get_P_element(self, mode, i, j):
+        ass_freq = self.modal_frequency(mode)
+        res = - ass_freq * ass_freq * self.l[j] * self.get_mu(i, j)
+        if i == j:
+            res += self.g * self.get_mu(i)
+        return(self.l[i] * res)
+    
+    def get_corrected_resonant_frequencies(self, torque):
+        cur_corrected_resonant_frequencies = []
+        for n in range(len(self.normal_mode_frequencies)):
+            cur_mode = self.normal_modes[n]
+            """P = []
+            for i in range(self.N):
+                P.append([])
+                for j in range(self.N):
+                    P[-1].append()"""
+            P = np.empty((self.N, self.N))
+            for i in range(self.N):
+                for j in range(self.N):
+                    P[i][j] = self.get_P_element(cur_mode, i, j)
+            print(P)
+            
+            print("GRAM SCHMIDT")
+            zero_force_span = gram_schmidt(P[1:])
+            print(zero_force_span)
+            print("LOL", inner_product(zero_force_span[0], zero_force_span[1]))
+            delta_u = P[0].copy()#perpendicularize([1]*self.N, P[1:-1])
+            print(delta_u)
+            print("delta u_0 dot grad 1 =", inner_product(P[0], delta_u))
+            
+            delta_u_coef = torque / inner_product(P[0], delta_u)
+            
+            print("Final delta_u =", scalar_product(delta_u, delta_u_coef))
+            
+            new_u = vector_sum(cur_mode, scalar_product(delta_u, delta_u_coef))
+            
+            """P_inv = np.linalg.inv(P)
+            new_u = cur_mode.copy()
+            for i in range(self.N):
+                new_u[i] += torque * P_inv[i][0]"""
+            cur_corrected_resonant_frequencies.append(self.modal_frequency(new_u))
+        
+        self.corrected_resonant_frequencies = cur_corrected_resonant_frequencies
+    """def get_corrected_resonant_frequencies(self, torque): #TODO: this is incorrect
+        cur_corrected_resonant_frequencies = []
+        for n in range(len(self.normal_mode_frequencies)):
+            omega_n = self.normal_mode_frequencies[n]
+            cur_sum = 0
+            for j in range(self.N):
+                cur_sum += self.normal_modes[n][j] * self.l[j] * self.get_mu(j)
+            cur_corrected_resonant_frequencies.append(omega_n - torque / (omega_n * self.l[0] * cur_sum))
+        self.corrected_resonant_frequencies = cur_corrected_resonant_frequencies"""
     
     def print_normal_modes(self):
         
@@ -406,6 +493,116 @@ class multipendulum(physical_system):
                     else:
                         line += f"      {cur_left}{' ' * (v_lens[j] - cur_v_len)}{self.normal_modes[j][i]:.3f}{cur_right}       {' ' * w_lens[j]}       "
                 print(line[:-2])
+    
+    
+    def plot_mode_portrait(self, ranges=[[-1.0, 1.0], [-1.0, 1.0]], graining=256, force_graining = 25):
+        # ranges[N][2] = [[u_1_min, u_1_max]...]. Default value -1.0:1.0 everywhere
+        # graining = number of datapoints in meshgrid along each dimension
+        
+        self.get_normal_modes()
+        self.print_normal_modes()
+        # ASSUME N = 2
+        def double_pendulum_modal_frequency(u1, u2):
+            top = self.g * (self.l[0] * u1 * u1 * (self.m[0] + self.m[1]) + self.l[1] * u2 * u2 * self.m[1])
+            bottom = self.m[0] * u1 * u1 * self.l[0] * self.l[0] + self.m[1] * (u1 * self.l[0] + u2 * self.l[1]) * (u1 * self.l[0] + u2 * self.l[1])
+            return(np.sqrt(top / bottom))
+        
+        # the modal frequency scalar field
+        
+        x = np.linspace(ranges[0][0],ranges[0][1],graining)
+        y = np.linspace(ranges[1][0],ranges[1][1],graining)
+        x_q = np.linspace(ranges[0][0],ranges[0][1],force_graining)
+        y_q = np.linspace(ranges[1][0],ranges[1][1],force_graining)
+        
+        xm, ym = np.meshgrid(x, y)
+        zm = double_pendulum_modal_frequency(xm, ym)
+        
+        # the normal modes
+        mode_points = []
+        for i in range(len(self.normal_modes)):
+            mode = self.normal_modes[i]
+            mode_points.append([[ranges[i][0], ranges[i][1]], [ranges[i][0] * mode[1] / mode[0], ranges[i][1] * mode[1] / mode[0]]])
+        
+        
+        # the constraint forces
+        q1_results = []
+        q2_results = []
+        colors = []
+        for y_val in y_q:
+            q1_results.append([])
+            q2_results.append([])
+            colors.append([])
+            for x_val in x_q:
+                cur_constraint_forces = self.get_constraint_forces([x_val, y_val])
+                u_mag = np.sqrt(x_val * x_val + y_val * y_val)
+                q1_results[-1].append(cur_constraint_forces[0])
+                q2_results[-1].append(cur_constraint_forces[0])
+                #colors[-1].append(a_func(x_val, v_val)+v_val)
+                colors[-1].append( 1.0 )
+        
+        # the constraint force gradients
+        x_list = []
+        y_list = []
+        q_1_list = [[], []]
+        q_2_list = [[], []]
+        for i in range(len(self.normal_modes)):
+            mode = self.normal_modes[i]
+            x_list.append([])
+            y_list.append([])
+            q_1_list[0].append([])
+            q_2_list[0].append([])
+            q_1_list[1].append([])
+            q_2_list[1].append([])
+            for x_val_1 in x_q:
+                x_val_2 = x_val_1 + 0.5 * (x_q[1] - x_q[0])
+                y_val_1 = x_val_1 * mode[1] / mode[0]
+                y_val_2 = x_val_2 * mode[1] / mode[0]
+                x_list[-1].append(x_val_1)
+                y_list[-1].append(y_val_1)
+                cur_P_1 = self.get_constraint_force_gradient_matrix([x_val_1, y_val_1])
+                cur_P_2 = self.get_constraint_force_gradient_matrix([x_val_2, y_val_2])
+                q_1_list[0][-1].append(cur_P_1[0][0])
+                q_1_list[1][-1].append(cur_P_1[0][1])
+                q_2_list[0][-1].append(cur_P_2[1][0])
+                q_2_list[1][-1].append(cur_P_2[1][1])
+            
+        fig, ax = plt.subplots()
+        plt.xlim(ranges[0][0], ranges[0][1])
+        plt.ylim(ranges[1][0], ranges[1][1])
+        plt.xlabel('$u_1$')
+        plt.ylabel('$u_2$')
+        pcm = plt.pcolormesh(xm, ym, zm, cmap='RdBu_r')
+        
+        isofrequenth_colors = ['#ff6699', '#66ff33']
+        
+        lines = []
+        nm_labels = []
+        
+        for i in range(len(mode_points)):
+            mode = mode_points[i]
+            nm_labels.append(f'$v_{i+1}, \\omega_{i+1}={self.normal_mode_frequencies[i]:.2f}$ rad.s$^{{-1}}$')
+            cur_plot, = plt.plot(mode[0], mode[1], linestyle='solid', color=isofrequenth_colors[i], label=nm_labels[-1])
+            lines.append(cur_plot)
+        plt.colorbar(pcm, label='$\omega(\\vec{u})$')
+        #plt.clim(min(self.normal_mode_frequencies), max(self.normal_mode_frequencies))
+        lines.append(plt.quiver(x_q, y_q, q1_results, q2_results, label='$\\vec{{Q}}$'))
+        
+        for i in range(len(self.normal_modes)):
+            if i == 0:
+                lines.append(plt.quiver(x_list[i], y_list[i], q_1_list[0][i], q_1_list[1][i], color='white', edgecolor='red', linewidth = 1, label='$\\nabla Q_1$'))
+                lines.append(plt.quiver(x_list[i] + 0.5 * (x_q[1] - x_q[0]), y_list[i] + 0.5 * (x_q[1] - x_q[0]) * self.normal_modes[i][1] / self.normal_modes[i][0], q_2_list[0][i], q_2_list[1][i], color='white', edgecolor='black', linewidth = 1, label='$\\nabla Q_2$'))
+            else:
+                plt.quiver(x_list[i], y_list[i], q_1_list[0][i], q_1_list[1][i], color='white', edgecolor='red', linewidth = 1)
+                plt.quiver(x_list[i] + 0.5 * (x_q[1] - x_q[0]), y_list[i] + 0.5 * (x_q[1] - x_q[0]) * self.normal_modes[i][1] / self.normal_modes[i][0], q_2_list[0][i], q_2_list[1][i], color='white', edgecolor='black', linewidth = 1)
+        
+        pos = ax.get_position()
+        ax.set_position([pos.x0, pos.y0, pos.width, pos.height * 1.0])
+        ax.legend(lines[:self.N], nm_labels, loc='center right', ncol=self.N, frameon=False, columnspacing=0.8, bbox_to_anchor=(1.27, 1.1))
+        leg = Legend(ax, lines[self.N:], ['$\\vec{{Q}}$', '$\\nabla Q_1$', '$\\nabla Q_2$'],
+             loc='center right', ncol=3, frameon=False, columnspacing=0.8, bbox_to_anchor=(1.27, 1.05))
+        ax.add_artist(leg)
+        plt.show()
+    
                 
     
     # --------------- numerical integration methods ------------------------

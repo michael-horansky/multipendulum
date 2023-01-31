@@ -46,6 +46,11 @@ avg_L_analyzer.plot_resonance_analysis_data(mech_resonance_analysis_preset)"""
 
 
 
+p2_small.plot_mode_portrait()
+
+
+
+"""
 print("Modal frequency on normal modes compared to normal mode frequencies sanity check:")
 p3_small.get_normal_modes()
 
@@ -56,13 +61,24 @@ a2 = p3_small.modal_frequency(p3_small.normal_modes[1])
 a3 = p3_small.modal_frequency(p3_small.normal_modes[2])
 print(f"modal freq. analysis: omega_1 = {a1}, omega_2 = {a2}, omega_3 = {a3}")
 
-"""triple_p_analyzer = analyzer(0.05, 1.0, 2.5, "3p_zoom_middle")
+q1 = p3_small.get_constraint_forces(np.array(p3_small.normal_modes[0]))
+q2 = p3_small.get_constraint_forces(p3_small.normal_modes[1])
+q3 = p3_small.get_constraint_forces(p3_small.normal_modes[2])
+print(f"constraint forces analysis: Q_1 = {q1}, Q_2 = {q2}, Q_3 = {q3}")
+
+p3_small.get_corrected_resonant_frequencies(2.5)
+print("CORRECTED", p3_small.corrected_resonant_frequencies)
+
+
+
+
+triple_p_analyzer = analyzer(0.05, 1.0, 2.5, "middle_freq_no_decay")
 triple_p_analyzer.add_pendulum(p3_small, "3p-small")
-triple_p_analyzer.add_pendulum(p3_big, "3p-big")
+#triple_p_analyzer.add_pendulum(p3_big, "3p-big")
 #triple_p_analyzer.driving_frequency_analysis(driving_frequency_range=(1.5, 2.3), datapoints=100, t_max = 500.0, t_threshold = 50.0)
 triple_p_analyzer.load_resonance_analysis_data()
-triple_p_analyzer.plot_resonance_analysis_data(mech_resonance_analysis_preset)
-"""
+triple_p_analyzer.plot_resonance_analysis_data(mech_resonance_analysis_preset)"""
+
 
 """
 p3_small.random_state(np.pi)

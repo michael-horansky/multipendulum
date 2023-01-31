@@ -1,6 +1,5 @@
 
 
-import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 import statistics
 
@@ -306,6 +305,12 @@ class analyzer:
             self.pendulums[i].get_normal_modes()
             line = "  normal mode frequencies [rad/s]: "
             for freq in self.pendulums[i].normal_mode_frequencies:
+                line += f"{freq:.3f}, "
+            print(line[:-2])
+            # Corrected resonant_frequencies
+            self.pendulums[i].get_corrected_resonant_frequencies(cur_external_force_amplitude)
+            line = "  corrected resonant frequencies [rad/s]: "
+            for freq in self.pendulums[i].corrected_resonant_frequencies:
                 line += f"{freq:.3f}, "
             print(line[:-2])
         
@@ -809,5 +814,14 @@ class analyzer:
             self.pendulums[p_i].get_normal_modes()
             line = f"  {self.pendulum_names[p_i]} normal mode frequencies [rad/s]: "
             for freq in self.pendulums[p_i].normal_mode_frequencies:
+                line += f"{freq:.3f}, "
+            print(line[:-2])
+        
+        # correcyed resonant frequencies
+        print("Theoretical normal modes:")
+        for p_i in range(len(self.pendulums)):
+            self.pendulums[p_i].get_corrected_resonant_frequencies(self.external_force_amplitude)
+            line = f"  {self.pendulum_names[p_i]} corrected resonant frequencies [rad/s]: "
+            for freq in self.pendulums[p_i].corrected_resonant_frequencies:
                 line += f"{freq:.3f}, "
             print(line[:-2])
