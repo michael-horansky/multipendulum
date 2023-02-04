@@ -82,15 +82,21 @@ class analyzer:
     def get_force_phasor(self):
         return(np.sin(self.t * self.omega_F))
     
-    def get_force(self, t, omega_F, amplitude, decay_rate = -1):
-        if decay_rate == -1:
-            return(amplitude * np.sin(t * omega_F))
-        return(amplitude * (1.0 - np.exp( - decay_rate * t)) * np.sin(t * omega_F))
+    def get_force(self, t, omega_F, F_amplitude_mode, decay_rate = -1):
+        # gets a force mode, returns a decayed force mode times correct time phasor
+        result_force_vector = []
+        for i in range(len(F_amplitude_mode)):
+            if decay_rate == -1:
+                result_force_vector.append(F_amplitude_mode[i] * np.sin(t * omega_F))
+            else:
+                result_force_vector.append(F_amplitude_mode[i] * (1.0 - np.exp( - decay_rate * t)) * np.sin(t * omega_F))
+        return(result_force_vector)
         
     
     def step(self, cur_external_force_list=0):
         
-        # cur external force list is a list of exteral forces at time t, t+dt/2 and t+dt
+        # cur external force list is a list of external forces at time t, t+dt/2 and t+dt - each element is a force vector with N elements
+        #TODO this doesnt work:
         if type(cur_external_force_list)!=list:
             cur_external_force_list=[self.external_force_amplitude*np.sin(self.t * self.omega_F), self.external_force_amplitude*np.sin((self.t + self.dt/2.0) * self.omega_F), self.external_force_amplitude*np.sin((self.t+self.dt) * self.omega_F)]
         
@@ -104,12 +110,20 @@ class analyzer:
     
     # ----------- config memory ------------------------------
     
-    def save_state_memory(self, state_memory_values_by_pendulum, driving_frequency_range, external_force_amplitude, datapoints, t_terminate):
+    def save_state_memory(self, state_memory_values_by_pendulum, driving_frequency_range, external_force_amplitude_mode, datapoints, t_terminate):
         state_memory_file = open('data/config/' + self.dataset_name + 'state_memory.txt', 'w')
         
+        # First line = (omega_F_min, omega_F_max, datapoints, t_terminate)
+        
         omega_F_min, omega_F_max = driving_frequency_range
-        config_string = '%f,%f,%f,%i,%f\n' % (omega_F_min, omega_F_max, external_force_amplitude, datapoints, t_terminate)
+        config_string = '%f,%f,%i,%f\n' % (omega_F_min, omega_F_max, datapoints, t_terminate)
         state_memory_file.write(config_string)
+        
+        # Second line = [external_force_amplitude_mode]
+        config_force_string = ''
+        for i in range(len(external_force_amplitude_mode)):
+            config_force_string += '%f,' % (external_force_amplitude_mode[i])
+        state_memory_file.write(config_force_string[:-1] + '\n')
         
         #print(state_memory_values_by_pendulum)
         
@@ -138,16 +152,23 @@ class analyzer:
             state_memory_file.close()
             #self.state_memory
             config_line = state_memory_lines[0]
+            config_force_line = state_memory_lines[1]
+            
             config_vals = config_line.split(",")
             omega_F_min = float(config_vals[0])
             omega_F_max = float(config_vals[1])
-            external_force_amplitude = float(config_vals[2])
-            datapoints  = int(config_vals[3])
-            t_start     = float(config_vals[4])
-            state_memory_lines = state_memory_lines[1:]
+            datapoints  = int(config_vals[2])
+            t_start     = float(config_vals[3])
+            
+            config_force_vals = config_force_line.split(",")
+            external_force_amplitude_mode = []
+            for i in range(len(config_force_vals)):
+                external_force_amplitude_mode.append(float(config_force_vals[i]))
+            
+            state_memory_lines = state_memory_lines[2:]
             
             print("  Dataset loaded with the following configuration:")
-            print("  driving frequency range = (%0.2f, %0.2f), force amplitude = %0.2f, number of datapoints = %i, starting time = %0.2f" % (omega_F_min, omega_F_max, external_force_amplitude, datapoints, t_start))
+            print("  driving frequency range = (%0.2f, %0.2f), force amplitude = %s, number of datapoints = %i, starting time = %0.2f" % (omega_F_min, omega_F_max, str(external_force_amplitude_mode), datapoints, t_start))
             
             state_memory_values_by_pendulum = empty_list_list(len(self.pendulums))
             for i in range(datapoints):
@@ -159,7 +180,7 @@ class analyzer:
                     cur_theta_dot_state = elementwise_casting(cur_state[1].split(','), float)
                     state_memory_values_by_pendulum[p_i].append([cur_theta_state, cur_theta_dot_state])
             
-            return(state_memory_values_by_pendulum, (omega_F_min, omega_F_max), external_force_amplitude, datapoints, t_start)
+            return(state_memory_values_by_pendulum, (omega_F_min, omega_F_max), external_force_amplitude_mode, datapoints, t_start)
             
                 
         except FileNotFoundError:
@@ -287,14 +308,22 @@ class analyzer:
             
     
     
-    def driving_frequency_analysis(self, driving_frequency_range, cur_external_force_amplitude = -1, datapoints = 200, t_max = 50.0, t_threshold=10.0, overwrite_stored_states = True, starting_states=[], t_start=0.0):
+    def driving_frequency_analysis(self, driving_frequency_range, force_mode = -1, datapoints = 200, t_max = 50.0, t_threshold=10.0, overwrite_stored_states = True, starting_states=[], t_start=0.0):
         
         self.last_driving_frequency_range = driving_frequency_range
-        if cur_external_force_amplitude == -1:
-            cur_external_force_amplitude = self.external_force_amplitude
+        
+        # Force amplitude: F_i(t) = tau_i(t)/l_i
+        if force_mode == -1:
+            force_mode = self.external_force_amplitude
+        # If force is a scalar, not a mode, we interpret it as F_i = force * delta_{1,i}
+        if type(force_mode) == float or type(force_mode) == np.float64:
+            cur_force_mode = [0.0]*self.pendulums[0].N
+            cur_force_mode[0] = force_mode
+            force_mode = cur_force_mode
+            
         
         # describe all pendulums in t
-        print("F = " + str(cur_external_force_amplitude) + "; omega_F_range = " + str(driving_frequency_range))
+        print("F = " + str(force_mode) + "; omega_F_range = " + str(driving_frequency_range))
         for i in range(len(self.pendulums)):
             print("Pendulum: " + self.pendulum_names[i])
             # Physical configuration
@@ -308,11 +337,11 @@ class analyzer:
                 line += f"{freq:.3f}, "
             print(line[:-2])
             # Corrected resonant_frequencies
-            self.pendulums[i].get_corrected_resonant_frequencies(cur_external_force_amplitude)
+            """self.pendulums[i].get_corrected_resonant_frequencies(force_mode)
             line = "  corrected resonant frequencies [rad/s]: "
             for freq in self.pendulums[i].corrected_resonant_frequencies:
                 line += f"{freq:.3f}, "
-            print(line[:-2])
+            print(line[:-2])"""
         
         print("-------------------------------------")
         
@@ -391,8 +420,8 @@ class analyzer:
                 decay_rate = -1#1.0/30.0
                 
                 while self.t < t_max:
-                    #self.pendulums[p_i].step(self.dt, [cur_external_force_amplitude*np.sin(self.t * omega_val), cur_external_force_amplitude*np.sin((self.t + self.dt/2.0) * omega_val), cur_external_force_amplitude*np.sin((self.t+self.dt) * omega_val)])
-                    self.pendulums[p_i].step(self.dt, [self.get_force(self.t, omega_val, cur_external_force_amplitude, decay_rate), self.get_force((self.t + self.dt/2.0), omega_val, cur_external_force_amplitude, decay_rate), self.get_force((self.t + self.dt), omega_val, cur_external_force_amplitude, decay_rate)])
+                    #self.pendulums[p_i].step(self.dt, [force_mode*np.sin(self.t * omega_val), force_mode*np.sin((self.t + self.dt/2.0) * omega_val), force_mode*np.sin((self.t+self.dt) * omega_val)])
+                    self.pendulums[p_i].step(self.dt, [self.get_force(self.t, omega_val, force_mode, decay_rate), self.get_force((self.t + self.dt/2.0), omega_val, force_mode, decay_rate), self.get_force((self.t + self.dt), omega_val, force_mode, decay_rate)])
                     self.t += self.dt
                     
                     if self.t > t_threshold:
@@ -480,7 +509,7 @@ class analyzer:
                 print("  " + self.pendulum_names[p_i] + ': No resonant frequencies found')
         
         if overwrite_stored_states:
-            self.save_state_memory(state_memory_values_by_pendulum, driving_frequency_range, cur_external_force_amplitude, datapoints, t_max)
+            self.save_state_memory(state_memory_values_by_pendulum, driving_frequency_range, force_mode, datapoints, t_max)
     
     
     def load_state(self, t_max, t_threshold, overwrite_stored_states = True):
@@ -523,7 +552,7 @@ class analyzer:
         
     
     
-    def plot_resonance_analysis_data(self, graph_list=['max_theta_1_graph', 'avg_E_graph', 'avg_L_graph', 'ang_f_theta_graph', 'hp_theta_std_graph', 'ang_f_phi_graph', 'hp_phi_std_graph'], names=-1, max_theta_simple_comparison = True, save_graph=False):
+    def plot_resonance_analysis_data(self, graph_list=['max_theta_1_graph', 'avg_E_graph', 'avg_L_graph', 'ang_f_theta_graph', 'hp_theta_std_graph', 'ang_f_phi_graph', 'hp_phi_std_graph'], names=-1, max_theta_simple_comparison = True, reference_frequencies = [], reference_frequencies_label = 'reference frequencies', save_graph=False):
         
         if names == -1:
             names = self.pendulum_names
@@ -557,15 +586,24 @@ class analyzer:
                     plt.plot(self.pendulum_resonance_analysis_data[p_i]['omega_F'], self.pendulum_resonance_analysis_data[p_i]['max_theta_1'], '.-', label=self.pendulum_names[p_i] + " data")
                     self.plot_scalar_list(plt, self.resonant_frequencies[p_i], label=f"{self.pendulum_names[p_i]} resonant f")
                     self.plot_scalar_list(plt, self.pendulums[p_i].normal_mode_frequencies, linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f")
+                    if len(reference_frequencies) != 0:
+                        self.plot_scalar_list(plt, reference_frequencies, label=reference_frequencies_label, linestyle='solid', color='red')
             if graph_list[i] == 'avg_E_graph':
                 plt.title("Time-average mechanical energy")
                 plt.xlabel("$\omega_F$ [rad.s$^{-1}$]")
                 plt.ylabel("$\langle E\\rangle$ [J]")
                 x_left, x_right = self.last_driving_frequency_range
                 for p_i in p_indexes:
-                    plt.plot(self.pendulum_resonance_analysis_data[p_i]['omega_F'], self.pendulum_resonance_analysis_data[p_i]['avg_E'], '.-', label=self.pendulum_names[p_i] + " data")
+                    
+                    # substract energy gauge so that U(equilibrium) = 0
+                    self.pendulums[p_i].reset_state()
+                    T, U, E = self.pendulums[p_i].get_total_energy()
+                    
+                    plt.plot(self.pendulum_resonance_analysis_data[p_i]['omega_F'], self.pendulum_resonance_analysis_data[p_i]['avg_E'] - U, '.-', label=self.pendulum_names[p_i] + " data")
                     self.plot_scalar_list(plt, self.resonant_frequencies[p_i], label=f"{self.pendulum_names[p_i]} resonant f")
                     self.plot_scalar_list(plt, self.pendulums[p_i].normal_mode_frequencies, linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f")
+                    if len(reference_frequencies) != 0:
+                        self.plot_scalar_list(plt, reference_frequencies, label=reference_frequencies_label, linestyle='solid', color='red')
             if graph_list[i] == 'avg_E_ratio_graph':
                 plt.title("Time-average mechanical energy (fraction of max val.)")
                 plt.xlabel("$\omega_F$ [rad.s$^{-1}$]")
@@ -577,6 +615,8 @@ class analyzer:
                     plt.plot(self.pendulum_resonance_analysis_data[p_i]['omega_F'], self.pendulum_resonance_analysis_data[p_i]['avg_E'] / max_avg_E_amp, '.-', label=self.pendulum_names[p_i] + " data")
                     self.plot_scalar_list(plt, self.resonant_frequencies[p_i], label=f"{self.pendulum_names[p_i]} resonant f")
                     self.plot_scalar_list(plt, self.pendulums[p_i].normal_mode_frequencies, linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f")
+                    if len(reference_frequencies) != 0:
+                        self.plot_scalar_list(plt, reference_frequencies, label=reference_frequencies_label, linestyle='solid', color='red')
             if graph_list[i] == 'avg_L_graph':
                 plt.title("Time-average angular momentum")
                 plt.xlabel("$\omega_F$ [rad.s$^{-1}$]")
@@ -586,6 +626,8 @@ class analyzer:
                     plt.plot(self.pendulum_resonance_analysis_data[p_i]['omega_F'], self.pendulum_resonance_analysis_data[p_i]['avg_L'], '.-', label=self.pendulum_names[p_i] + " data")
                     self.plot_scalar_list(plt, self.resonant_frequencies[p_i], label=f"{self.pendulum_names[p_i]} resonant f")
                     self.plot_scalar_list(plt, self.pendulums[p_i].normal_mode_frequencies, linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f")
+                    if len(reference_frequencies) != 0:
+                        self.plot_scalar_list(plt, reference_frequencies, label=reference_frequencies_label, linestyle='solid', color='red')
             if graph_list[i] == 'ang_f_theta_graph':
                 plt.title("Angular frequencies")
                 #plt.ylim(0, max_ang_f_val * 1.1)
@@ -600,6 +642,8 @@ class analyzer:
                     # add resonant frequencies and normal mode frequencies
                     self.plot_scalar_list(plt, self.resonant_frequencies[p_i], label=f"{self.pendulum_names[p_i]} resonant f", direction = 'xy')
                     self.plot_scalar_list(plt, self.pendulums[p_i].normal_mode_frequencies, linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f", direction='xy')
+                    if len(reference_frequencies) != 0:
+                        self.plot_scalar_list(plt, reference_frequencies, label=reference_frequencies_label, linestyle='solid', color='red', direction='xy')
             if graph_list[i] == 'ang_f_phi_graph':
                 plt.title("Angular frequencies of angle differences")
                 #plt.ylim(0, max_ang_f_val * 1.1)
@@ -614,6 +658,8 @@ class analyzer:
                     # add resonant frequencies and normal mode frequencies
                     self.plot_scalar_list(plt, self.resonant_frequencies[p_i], label=f"{self.pendulum_names[p_i]} resonant f", direction = 'xy')
                     self.plot_scalar_list(plt, self.pendulums[p_i].normal_mode_frequencies, linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f", direction='xy')
+                    if len(reference_frequencies) != 0:
+                        self.plot_scalar_list(plt, reference_frequencies, label=reference_frequencies_label, linestyle='solid', color='red', direction='xy')
             """if graph_list[i] == 'ang_f_theta_space':
                 plt.title("Angular frequency space")
                 #border_coefficient = 1.05
@@ -642,6 +688,8 @@ class analyzer:
                     # observed resonant frequencies and normal modes
                     self.plot_scalar_list(plt, self.resonant_frequencies[p_i], label=f"{self.pendulum_names[p_i]} resonant f")
                     self.plot_scalar_list(plt, self.pendulums[p_i].normal_mode_frequencies, linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f")
+                    if len(reference_frequencies) != 0:
+                        self.plot_scalar_list(plt, reference_frequencies, label=reference_frequencies_label, linestyle='solid', color='red')
             if graph_list[i] == 'hp_phi_std_graph':
                 plt.title("Standard deviation of half-periods ($\phi$)")
                 plt.xlabel("$\omega_F$ [rad.s$^{-1}$]")
@@ -654,6 +702,8 @@ class analyzer:
                     # observed resonant frequencies and normal modes
                     self.plot_scalar_list(plt, self.resonant_frequencies[p_i], label=f"{self.pendulum_names[p_i]} resonant f")
                     self.plot_scalar_list(plt, self.pendulums[p_i].normal_mode_frequencies, linestyle='solid', label=f"{self.pendulum_names[p_i]} normal mode f")
+                    if len(reference_frequencies) != 0:
+                        self.plot_scalar_list(plt, reference_frequencies, label=reference_frequencies_label, linestyle='solid', color='red')
                     # predicted resonant frequencies
                     #for pred_res_f in predicted_resonant_frequency_list[my_filenames[i]]:
                     #    plt.axvline(x=pred_res_f, linestyle='dotted', color=max_amp_plotline_color_list[my_filenames[i]], label = my_filenames[i] + " predicted res f")
@@ -817,11 +867,3 @@ class analyzer:
                 line += f"{freq:.3f}, "
             print(line[:-2])
         
-        # correcyed resonant frequencies
-        print("Theoretical normal modes:")
-        for p_i in range(len(self.pendulums)):
-            self.pendulums[p_i].get_corrected_resonant_frequencies(self.external_force_amplitude)
-            line = f"  {self.pendulum_names[p_i]} corrected resonant frequencies [rad/s]: "
-            for freq in self.pendulums[p_i].corrected_resonant_frequencies:
-                line += f"{freq:.3f}, "
-            print(line[:-2])

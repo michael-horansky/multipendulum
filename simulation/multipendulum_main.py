@@ -46,16 +46,130 @@ avg_L_analyzer.plot_resonance_analysis_data(mech_resonance_analysis_preset)"""
 
 
 
-#p2_small.dp_plot_mode_portrait()
-p3_small.tp_plot_mode_portrait()
+# we select mode 1 and create a small displacement in u space perpendicular to v_1:
+"""perturbation_index = 0
+displacement_scale = 0.3
+mode_of_interest = p2_small.normal_modes[perturbation_index]
+mode_displacement = [- mode_of_interest[1] * displacement_scale, mode_of_interest[0] * displacement_scale]
+target_mode = vector_sum(mode_of_interest, mode_displacement)
+target_frequency = p2_small.modal_frequency(target_mode)
+print(f"New mode = ({mode_of_interest[0]}, {mode_of_interest[1]}) + ({mode_displacement[0]}, {mode_displacement[1]}) = ({mode_of_interest[0] + mode_displacement[0]}, {mode_of_interest[1] + mode_displacement[1]})")
+print(f"Old frequency = {p2_small.normal_mode_frequencies[perturbation_index]}; new frequency = {target_frequency}")
+target_force_mode = p2_small.get_constraint_forces(target_mode)
+print(f"Associated constraint force mode = [{target_force_mode[0]:.02f}, {target_force_mode[1]:.02f}]")"""
 
 
+
+#NOTE: looks like taking the perturbed force mode from mode 1 and calculating the perturbed frequency from mode 2 predicts well the resonance 2 with force 1. WHY
+
+#force_magnitude = 2.5
+
+def double_pendulum_mode_perturbation(double_pendulum, force_magnitude, analyze = True):
+    
+    torque_magnitude = force_magnitude * double_pendulum.l[0]
+    print("Torque magnitude associated with inputted force magnitude =", torque_magnitude)
+    
+    dp_analyzer = analyzer(0.05, 1.0, 2.5, "dp_force_scalar")
+    dp_analyzer.add_pendulum(double_pendulum, "2pend")
+    if analyze:
+        dp_analyzer.driving_frequency_analysis(driving_frequency_range=(0.9, 2.9), force_mode = torque_magnitude / double_pendulum.l[0], datapoints=100, t_max = 1000.0, t_threshold = 200.0)
+        dp_analyzer.save_resonance_analysis_data()
+    else:
+        dp_analyzer.load_resonance_analysis_data()
+        dp_analyzer.plot_resonance_analysis_data(mech_resonance_analysis_preset)
+    
+    for n_m_i in range(2):
+        target_frequency, target_torque_mode, used_displacement = double_pendulum.get_perturbed_force_mode(n_m_i, 0.1, print_values = False)
+        
+        mode_displacement_coef = torque_magnitude / magnitude(target_torque_mode)
+        new_displacement = scalar_product(used_displacement, mode_displacement_coef)
+        
+        target_frequency, target_torque_mode, used_displacement = double_pendulum.get_perturbed_force_mode(n_m_i, new_displacement)
+
+        dp_analyzer = analyzer(0.05, 1.0, 2.5, "dp_force_vector_%i" % (n_m_i + 1))
+        dp_analyzer.add_pendulum(double_pendulum, "2pend")
+        if analyze:
+            dp_analyzer.driving_frequency_analysis(driving_frequency_range=(0.9, 2.9), force_mode = double_pendulum.get_force_from_torque(target_torque_mode), datapoints=100, t_max = 1000.0, t_threshold = 200.0)
+            dp_analyzer.save_resonance_analysis_data()
+        else:
+            dp_analyzer.load_resonance_analysis_data()
+            dp_analyzer.plot_resonance_analysis_data(mech_resonance_analysis_preset, reference_frequencies=[target_frequency], reference_frequencies_label='displaced modal f.')
+        print("-----------------------------------------------")
+
+def double_pendulum_force_matching_mode(double_pendulum, force_magnitude, analyze = True):
+    
+    torque_magnitude = force_magnitude * double_pendulum.l[0]
+    print("Torque magnitude associated with inputted force magnitude =", torque_magnitude)
+    
+    double_pendulum.modal_analysis()
+    dp_analyzer = analyzer(0.05, 1.0, 2.5, "dp_v_n_force_scalar")
+    dp_analyzer.add_pendulum(double_pendulum, "2pend")
+    if analyze:
+        dp_analyzer.driving_frequency_analysis(driving_frequency_range=(0.9, 2.9), force_mode = torque_magnitude / double_pendulum.l[0], datapoints=100, t_max = 1000.0, t_threshold = 200.0)
+        dp_analyzer.save_resonance_analysis_data()
+    else:
+        dp_analyzer.load_resonance_analysis_data()
+        dp_analyzer.plot_resonance_analysis_data(mech_resonance_analysis_preset)
+    
+    for n_m_i in range(2):
+        target_torque_mode = double_pendulum.normal_modes[n_m_i].copy()
+        
+        mode_displacement_coef = torque_magnitude / magnitude(target_torque_mode)
+        target_torque_mode = scalar_product(target_torque_mode, mode_displacement_coef)
+        print(f"Magnitude of torque mode = {magnitude(target_torque_mode):.3f}, magnitude of force mode = {magnitude(double_pendulum.get_force_from_torque(target_torque_mode)):.3f}, ")
+        
+        dp_analyzer = analyzer(0.05, 1.0, 2.5, "dp_v_n_force_vector_%i" % (n_m_i + 1))
+        dp_analyzer.add_pendulum(double_pendulum, "2pend")
+        if analyze:
+            dp_analyzer.driving_frequency_analysis(driving_frequency_range=(0.9, 2.9), force_mode = double_pendulum.get_force_from_torque(target_torque_mode), datapoints=100, t_max = 1000.0, t_threshold = 200.0)
+            dp_analyzer.save_resonance_analysis_data()
+        else:
+            dp_analyzer.load_resonance_analysis_data()
+            dp_analyzer.plot_resonance_analysis_data(mech_resonance_analysis_preset)
+        print("-----------------------------------------------")
+
+
+
+def triple_pendulum_mode_perturbation(triple_pendulum, force_magnitude, omega_range = (0.6, 4.2), analyze = True):
+
+    triple_pendulum.modal_analysis()
+    dp_analyzer = analyzer(0.05, 1.0, 2.5, "tp_force_scalar")
+    dp_analyzer.add_pendulum(triple_pendulum, "3pend")
+    if analyze:
+        dp_analyzer.driving_frequency_analysis(driving_frequency_range=omega_range, force_mode = force_magnitude, datapoints=100, t_max = 500.0, t_threshold = 100.0)
+        dp_analyzer.save_resonance_analysis_data()
+    else:
+        dp_analyzer.load_resonance_analysis_data()
+        dp_analyzer.plot_resonance_analysis_data(mech_resonance_analysis_preset)
+
+    print("-----------------------------------------------")
+    for n_m_i in range(3):
+        initial_displacement = scalar_product(vector_product([1.0, 0.0, 0.0], triple_pendulum.normal_modes[n_m_i]), 1/5.0**(n_m_i))
+        target_frequency, target_force_mode, used_displacement = triple_pendulum.get_perturbed_force_mode(n_m_i, initial_displacement, print_values = True)
+        
+        mode_displacement_coef = force_magnitude / magnitude(target_force_mode)
+        new_displacement = scalar_product(used_displacement, mode_displacement_coef)
+        
+        target_frequency, target_force_mode, used_displacement = triple_pendulum.get_perturbed_force_mode(n_m_i, new_displacement)
+
+        dp_analyzer = analyzer(0.05, 1.0, 2.5, "tp_force_vector_%i" % (n_m_i + 1))
+        dp_analyzer.add_pendulum(triple_pendulum, "3pend")
+        if analyze:
+            dp_analyzer.driving_frequency_analysis(driving_frequency_range=omega_range, force_mode = target_force_mode, datapoints=100, t_max = 500.0, t_threshold = 100.0)
+            dp_analyzer.save_resonance_analysis_data()
+        else:
+            dp_analyzer.load_resonance_analysis_data()
+            dp_analyzer.plot_resonance_analysis_data(mech_resonance_analysis_preset, reference_frequencies=[target_frequency], reference_frequencies_label='displaced modal f.')
+        print("-----------------------------------------------")
+
+
+
+
+#double_pendulum_mode_perturbation(p2_small, 2.5, analyze = False)
+double_pendulum_force_matching_mode(p2_small, 2.5, analyze = False)
+#triple_pendulum_mode_perturbation(p3_small, 2.5, analyze=False)
 
 """
-print("Modal frequency on normal modes compared to normal mode frequencies sanity check:")
-p3_small.get_normal_modes()
-
-p3_small.print_normal_modes()
 
 a1 = p3_small.modal_frequency(p3_small.normal_modes[0])
 a2 = p3_small.modal_frequency(p3_small.normal_modes[1])
@@ -69,16 +183,27 @@ print(f"constraint forces analysis: Q_1 = {q1}, Q_2 = {q2}, Q_3 = {q3}")
 
 p3_small.get_corrected_resonant_frequencies(2.5)
 print("CORRECTED", p3_small.corrected_resonant_frequencies)
+"""
+
+"""
+print("Modal frequency on normal modes compared to normal mode frequencies sanity check:")
+p3_big.get_normal_modes()
+
+p3_big.print_normal_modes()
 
 
 
 
-triple_p_analyzer = analyzer(0.05, 1.0, 2.5, "middle_freq_no_decay")
+
+triple_p_analyzer = analyzer(0.05, 1.0, 2.5, "triple_pend_full_spectrum")
 triple_p_analyzer.add_pendulum(p3_small, "3p-small")
-#triple_p_analyzer.add_pendulum(p3_big, "3p-big")
-#triple_p_analyzer.driving_frequency_analysis(driving_frequency_range=(1.5, 2.3), datapoints=100, t_max = 500.0, t_threshold = 50.0)
+triple_p_analyzer.add_pendulum(p3_big, "3p-big")
+#triple_p_analyzer.driving_frequency_analysis(driving_frequency_range=(0.5, 4.1), datapoints=300, t_max = 500.0, t_threshold = 50.0)
 triple_p_analyzer.load_resonance_analysis_data()
-triple_p_analyzer.plot_resonance_analysis_data(mech_resonance_analysis_preset)"""
+triple_p_analyzer.plot_resonance_analysis_data(mech_resonance_analysis_preset)
+#triple_p_analyzer.save_resonance_analysis_data()
+
+"""
 
 
 """

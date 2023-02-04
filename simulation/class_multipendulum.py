@@ -1,5 +1,4 @@
 
-import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.legend import Legend
 
@@ -268,10 +267,11 @@ class multipendulum(physical_system):
         my_M = self.get_M()
         return(np.linalg.det(my_M))
     
-    def get_S(self, external_force):
+    def get_S(self, external_force_vector):
         S = []
         for a in range(self.N):
-            S.append(0.0)
+            S.append(external_force_vector[a])
+            #S.append(0.0)
             cur_sum_i = 0.0
             for i in range(a, self.N):
                 cur_sum_j = 0.0
@@ -279,25 +279,26 @@ class multipendulum(physical_system):
                     cur_sum_j += self.l[j] * self.theta_dot[j] * self.theta_dot[j] * np.sin(self.theta[a] - self.theta[j])
                 cur_sum_i += self.m[i] * (self.g * np.sin(self.theta[a]) + cur_sum_j)
             S[a] -= cur_sum_i
-        S[0] += external_force
+        #for a in range(self.N):
+        #    S[a] += external_force_vector[a]
         return(S)
     
-    def get_modified_M(self, n, external_force):
+    def get_modified_M(self, n, external_force_vector):
         M = self.get_M()
-        S = self.get_S(external_force)
+        S = self.get_S(external_force_vector)
         for a in range(self.N):
             M[a][n] = S[a]
         return(M)
     
-    def get_det_modified_M(self, n, external_force):
-        my_M = self.get_modified_M(n, external_force)
+    def get_det_modified_M(self, n, external_force_vector):
+        my_M = self.get_modified_M(n, external_force_vector)
         return(np.linalg.det(my_M))
     
-    def get_acceleration(self, external_force):
+    def get_acceleration(self, external_force_vector):
         det_M = self.get_det_M()
         acceleration = []
         for n in range(self.N):
-            acceleration.append( self.get_det_modified_M(n, external_force) / (self.l[n] * det_M) )
+            acceleration.append( self.get_det_modified_M(n, external_force_vector) / (self.l[n] * det_M) )
         return(acceleration)
     
     def get_angular_momentum(self):
@@ -314,6 +315,12 @@ class multipendulum(physical_system):
                 D += self.theta_dot[i] * self.l[i] * np.cos(self.theta[i])
             L += A * C + B * D
         return(L)
+    
+    def get_force_from_torque(self, torque_mode):
+        force_mode = []
+        for i in range(len(torque_mode)):
+            force_mode.append(torque_mode[i] / self.l[i])
+        return(force_mode)
     
     # --------------- theoretical normal modes analysis ------------------------
     
@@ -408,15 +415,10 @@ class multipendulum(physical_system):
             res += self.g * self.get_mu(i)
         return(self.l[i] * res)
     
-    def get_corrected_resonant_frequencies(self, torque):
+    def get_corrected_resonant_frequencies(self, force_mode):
         cur_corrected_resonant_frequencies = []
-        for n in range(len(self.normal_mode_frequencies)):
+        """for n in range(len(self.normal_mode_frequencies)):
             cur_mode = self.normal_modes[n]
-            """P = []
-            for i in range(self.N):
-                P.append([])
-                for j in range(self.N):
-                    P[-1].append()"""
             P = np.empty((self.N, self.N))
             for i in range(self.N):
                 for j in range(self.N):
@@ -437,22 +439,10 @@ class multipendulum(physical_system):
             
             new_u = vector_sum(cur_mode, scalar_product(delta_u, delta_u_coef))
             
-            """P_inv = np.linalg.inv(P)
-            new_u = cur_mode.copy()
-            for i in range(self.N):
-                new_u[i] += torque * P_inv[i][0]"""
-            cur_corrected_resonant_frequencies.append(self.modal_frequency(new_u))
+
+            cur_corrected_resonant_frequencies.append(self.modal_frequency(new_u))"""
         
         self.corrected_resonant_frequencies = cur_corrected_resonant_frequencies
-    """def get_corrected_resonant_frequencies(self, torque): #TODO: this is incorrect
-        cur_corrected_resonant_frequencies = []
-        for n in range(len(self.normal_mode_frequencies)):
-            omega_n = self.normal_mode_frequencies[n]
-            cur_sum = 0
-            for j in range(self.N):
-                cur_sum += self.normal_modes[n][j] * self.l[j] * self.get_mu(j)
-            cur_corrected_resonant_frequencies.append(omega_n - torque / (omega_n * self.l[0] * cur_sum))
-        self.corrected_resonant_frequencies = cur_corrected_resonant_frequencies"""
     
     def print_normal_modes(self):
         
@@ -494,13 +484,38 @@ class multipendulum(physical_system):
                         line += f"      {cur_left}{' ' * (v_lens[j] - cur_v_len)}{self.normal_modes[j][i]:.3f}{cur_right}       {' ' * w_lens[j]}       "
                 print(line[:-2])
     
+    def modal_analysis(self):
+        self.get_normal_modes()
+        self.print_normal_modes()
+    
+    def get_perturbed_force_mode(self, normal_mode_index, mode_displacement = 0.2, print_values = True):
+        # takes a normal mode in u-space, perturbs away from it and calculates and returns the target frequency and constraint forces
+        
+        self.modal_analysis()
+        mode_of_interest = self.normal_modes[normal_mode_index]
+        # if mode_displacement is a scalar, it assumes N=2, rotates v_n by pi/2 and rescales by itself
+        if type(mode_displacement) == float:
+            mode_displacement = [- mode_of_interest[1] * mode_displacement, mode_of_interest[0] * mode_displacement]
+        target_mode = vector_sum(mode_of_interest, mode_displacement)
+        target_frequency = self.modal_frequency(target_mode)
+        target_force_mode = self.get_constraint_forces(target_mode)
+        if print_values:
+            if self.N == 2:
+                print(f"New mode = ({mode_of_interest[0]:.4f}, {mode_of_interest[1]:.4f}) + ({mode_displacement[0]:.4f}, {mode_displacement[1]:.4f}) = ({mode_of_interest[0] + mode_displacement[0]:.4f}, {mode_of_interest[1] + mode_displacement[1]:.4f})")
+                print(f"Old frequency = {self.normal_mode_frequencies[normal_mode_index]:.3f}; new frequency = {target_frequency:.3f}")
+                print(f"Associated constraint force mode = [{target_force_mode[0]:.2f}, {target_force_mode[1]:.2f}], magnitude = {magnitude(target_force_mode):.2f}")
+            if self.N == 3:
+                print(f"New mode = ({mode_of_interest[0]:.4f}, {mode_of_interest[1]:.4f}, {mode_of_interest[2]:.4f}) + ({mode_displacement[0]:.4f}, {mode_displacement[1]:.4f}, {mode_displacement[2]:.4f}) = ({mode_of_interest[0] + mode_displacement[0]:.4f}, {mode_of_interest[1] + mode_displacement[1]:.4f}, {mode_of_interest[2] + mode_displacement[2]:.4f})")
+                print(f"Old frequency = {self.normal_mode_frequencies[normal_mode_index]:.3f}; new frequency = {target_frequency:.3f}")
+                print(f"Associated constraint force mode = [{target_force_mode[0]:.2f}, {target_force_mode[1]:.2f}, {target_force_mode[2]:.2f}], magnitude = {magnitude(target_force_mode):.2f}")
+        return((target_frequency, target_force_mode, mode_displacement))
+                
     
     def dp_plot_mode_portrait(self, ranges=[[-1.0, 1.0], [-1.0, 1.0]], graining=256, force_graining = 25):
         # ranges[N][2] = [[u_1_min, u_1_max]...]. Default value -1.0:1.0 everywhere
         # graining = number of datapoints in meshgrid along each dimension
         
-        self.get_normal_modes()
-        self.print_normal_modes()
+        self.modal_analysis()
         # ASSUME N = 2
         def double_pendulum_modal_frequency(u1, u2):
             top = self.g * (self.l[0] * u1 * u1 * (self.m[0] + self.m[1]) + self.l[1] * u2 * u2 * self.m[1])
@@ -676,8 +691,7 @@ class multipendulum(physical_system):
                 res -= 2.0 * np.pi
             return(res)
         
-        self.get_normal_modes()
-        self.print_normal_modes()
+        self.modal_analysis()
             
         # the modal frequency scalar field
         

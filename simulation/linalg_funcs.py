@@ -1,5 +1,8 @@
 
 
+import numpy as np
+
+
 def inner_product(a, b):
     res = 0
     for i in range(len(a)):
@@ -23,6 +26,13 @@ def vector_sum(a, b):
     for i in range(len(a)):
         res.append(a[i] + b[i])
     return(res)
+
+def magnitude(v):
+    return(np.sqrt(inner_product(v, v)))
+
+
+def vector_product(a, b):
+    return([a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]])
 
 def proj(u, v):
     return(scalar_product(u, inner_product(v, u)/inner_product(u, u)))

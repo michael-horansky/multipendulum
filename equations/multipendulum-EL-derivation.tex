@@ -33,11 +33,11 @@
 	Hence the total gravitational potential energy is
 	$$U_g=\sum_{i=1}^N U_i=-\sum_{i=1}^N m_ig\sum_{j=1}^i l_j \cos{\theta_j}$$
 	
-	And the potential energy due to the torque $\tau(t)$ driving the first segment is
-	$$U_\tau = -\tau(t)\theta_1$$
+	And the potential energy due to the torque $\tau_i(t)$ driving the $i$-th segment is
+	$$U_\tau = -\sum_{i=1}^N\tau_i(t)\theta_i$$
 	
 	Since this force-inducing potential is not a function of $\vec{\dot{\theta}}$, we can absorb it into the Lagrangian. 	Hence the total potential energy is
-	$$U=-\tau(t)\theta_1-\sum_{i=1}^N m_ig\sum_{j=1}^i l_j \cos{\theta_j}$$
+	$$U=-\sum_{i=1}^N\tau_i(t)\theta_i-\sum_{i=1}^N m_ig\sum_{j=1}^i l_j \cos{\theta_j}$$
 	
 	The kinetic energy of the $n$-th segment is
 	$$T_n=\frac{1}{2}m_nv_n^2=\frac{1}{2}m_n\left(\left(\sum_{i=1}^n \dot{\theta}_i l_i \cos{\theta_i}\right)^2+\left(\sum_{i=1}^n \dot{\theta}_i l_i \sin{\theta_i}\right)^2\right)$$
@@ -46,12 +46,12 @@
 	$$T=\sum_{i=1}^N T_i = \sum_{i=1}^N \frac{1}{2}m_i\left(\left(\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}\right)^2+\left(\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}\right)^2\right)$$
 	
 	This yields the Lagrangian of the system:
-	$$L=T-U=\tau(t)\theta_1+\sum_{i=1}^N m_i \left[\frac{1}{2}\left(\left(\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}\right)^2+\left(\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}\right)^2\right)+g\sum_{j=1}^i l_j \cos{\theta_j}\right]$$
+	$$L=T-U=\sum_{i=1}^N\tau_i(t)\theta_i+\sum_{i=1}^N m_i \left[\frac{1}{2}\left(\left(\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}\right)^2+\left(\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}\right)^2\right)+g\sum_{j=1}^i l_j \cos{\theta_j}\right]$$
 	
 	It is meaningful to define a term $L_n$ as
 	$$L_n=T_n-U_n = m_n\left[\frac{1}{2}\left(\left(\sum_{i=1}^n \dot{\theta}_i l_i \cos{\theta_i}\right)^2+\left(\sum_{i=1}^n \dot{\theta}_i l_i \sin{\theta_i}\right)^2\right)+g\sum_{i=1}^n l_i \cos{\theta_i}\right]$$
 	so that
-	$$L=\tau(t)\theta_1+\sum_{i=1}^NL_i$$
+	$$L=\sum_{i=1}^N\tau_i(t)\theta_i+\sum_{i=1}^NL_i$$
 	
 	\section{The Euler-Lagrange equation}
 	
@@ -62,7 +62,7 @@
 	$$\pdv{L_i}{\theta_n}=0\qq{if}n>i$$
 	
 	Now we can use this to simplify the expression
-	$$\pdv{L}{\theta_n}=\pdv{}{\theta_n}\tau(t)\theta_1+\pdv{\theta_n}\sum_{i=1}^N L_i=\tau(t)\delta_{1n}+\sum_{i=1}^N \pdv{L_i}{\theta_n}=\tau(t)\delta_{1n}+\sum_{i=n}^N \pdv{L_i}{\theta_n}$$
+	$$\pdv{L}{\theta_n}=\pdv{}{\theta_n}\sum_{i=1}^N\tau_i(t)\theta_i+\pdv{\theta_n}\sum_{i=1}^N L_i=\tau_n(t)+\sum_{i=1}^N \pdv{L_i}{\theta_n}=\tau(t)_n+\sum_{i=n}^N \pdv{L_i}{\theta_n}$$
 	where for each sum term in the last expression $i\geq n$, hence all the terms should be nonzero. For these terms we have
 	\begin{eqnarray*}
 	\pdv{L_i}{\theta_n}&=&\pdv{\theta_n}m_i\left[\frac{1}{2}\left(\left(\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}\right)^2+\left(\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}\right)^2\right)+g\sum_{j=1}^i l_j \cos{\theta_j}\right]\\
@@ -78,15 +78,15 @@
 	
 	From which we have
 	\begin{eqnarray*}
-	\pdv{L}{\theta_n}&=&\tau(t)\delta_{1n}-l_n\sum_{i=n}^N m_i\left[\dot{\theta}_n  \left(\sin{\theta_n}\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}-\cos{\theta_n}\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}\right)+g \sin{\theta_n}\right]\\
-	&=&\tau(t)\delta_{1n}-l_n\sum_{i=n}^N m_i\left[g \sin{\theta_n} + \dot{\theta}_n \sum_{j=1}^i \dot{\theta}_j l_j \left(\sin{\theta_n}\cos{\theta_j}- \cos{\theta_n}\sin{\theta_j}\right)\right]
+	\pdv{L}{\theta_n}&=&\tau_n(t)-l_n\sum_{i=n}^N m_i\left[\dot{\theta}_n  \left(\sin{\theta_n}\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}-\cos{\theta_n}\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}\right)+g \sin{\theta_n}\right]\\
+	&=&\tau_n(t)-l_n\sum_{i=n}^N m_i\left[g \sin{\theta_n} + \dot{\theta}_n \sum_{j=1}^i \dot{\theta}_j l_j \left(\sin{\theta_n}\cos{\theta_j}- \cos{\theta_n}\sin{\theta_j}\right)\right]
 	\end{eqnarray*}
 	Using the angle subtraction identity $\sin{\theta_n}\cos{\theta_j}-\cos{\theta_n}\sin{\theta_j}=\sin(\theta_n - \theta_j)$ yields
-	$$\pdv{L}{\theta_n}=\tau(t)\delta_{1n}-l_n\sum_{i=n}^N m_i\left[g \sin{\theta_n} + \dot{\theta}_n \sum_{j=1}^i \dot{\theta}_j l_j \sin(\theta_n - \theta_j)\right]$$
+	$$\pdv{L}{\theta_n}=\tau_n(t)-l_n\sum_{i=n}^N m_i\left[g \sin{\theta_n} + \dot{\theta}_n \sum_{j=1}^i \dot{\theta}_j l_j \sin(\theta_n - \theta_j)\right]$$
 	\subsection{The $\dv{t}\pdv{L}{\dot{\theta}_n}$ term}
 	
 	First, we need to find $\pdv{L}{\dot{\theta}_n}$. We can use approach analogous to subsection 2.1:
-	$$\pdv{L}{\dot{\theta}_n}=\pdv{}{\dot{\theta}_n}\tau(t)\theta_1+\pdv{\dot{\theta}_n}\sum_{i=1}^N L_i=\sum_{i=1}^N \pdv{L_i}{\dot{\theta}_n}=\sum_{i=n}^N \pdv{L_i}{\dot{\theta}_n}$$
+	$$\pdv{L}{\dot{\theta}_n}=\pdv{}{\dot{\theta}_n}\sum_{i=1}^N\tau_i(t)\theta_i+\pdv{\dot{\theta}_n}\sum_{i=1}^N L_i=\sum_{i=1}^N \pdv{L_i}{\dot{\theta}_n}=\sum_{i=n}^N \pdv{L_i}{\dot{\theta}_n}$$
 	where
 	\begin{eqnarray*}
 	\pdv{L_i}{\dot{\theta}_n}&=&\pdv{\dot{\theta}_n}m_i\left[\frac{1}{2}\left(\left(\sum_{j=1}^i \dot{\theta}_j l_j \cos{\theta_j}\right)^2+\left(\sum_{j=1}^i \dot{\theta}_j l_j \sin{\theta_j}\right)^2\right)+g\sum_{j=1}^i l_j \cos{\theta_j}\right]\\
@@ -120,15 +120,15 @@
 	Plugging our obtained expressions for these terms yields a set of $N$ second-order differential equations:
 	\begin{eqnarray*}
 	l_n\sum_{i=n}^N m_i\left[g \sin{\theta_n} + \sum_{j=1}^il_j\left[ \ddot{\theta}_j\cos(\theta_n-\theta_j)-\dot{\theta}_j(\dot{\theta}_n-\dot{\theta}_j)\sin(\theta_n-\theta_j)   + \dot{\theta}_n \dot{\theta}_j l_j \sin(\theta_n - \theta_j) \right]     \right]\\
-	=\tau(t)\delta_{1n}\qq{for}n=1,2,\dots N
+	=\tau_n(t)\qq{for}n=1,2,\dots N
 	\end{eqnarray*}
 	which simplifies to
 	\begin{eqnarray*}
-	l_n\sum_{i=n}^N m_i\left[g \sin{\theta_n} + \sum_{j=1}^il_j\left[ \ddot{\theta}_j\cos(\theta_n-\theta_j)+\dot{\theta}_j^2 \sin(\theta_n-\theta_j) \right]     \right]=\tau(t)\delta_{1n}\qq{for}n=1,2,\dots N
+	l_n\sum_{i=n}^N m_i\left[g \sin{\theta_n} + \sum_{j=1}^il_j\left[ \ddot{\theta}_j\cos(\theta_n-\theta_j)+\dot{\theta}_j^2 \sin(\theta_n-\theta_j) \right]     \right]=\tau_n(t)\qq{for}n=1,2,\dots N
 	\end{eqnarray*}
-	If $l_i = 0$, the system is identical to a multipendulum of order $N-1$ with one segment being of mass $m_{i-1}+m_i$. As this produces a degeneracy, we may safely ignore it. Since $l_n\neq 0\forall n$, we can divide each equation by $l_n$. Let $\tau(t)=l_1F(t)$. The system of equations becomes
+	If $l_i = 0$, the system is identical to a multipendulum of order $N-1$ with one segment being of mass $m_{i-1}+m_i$. As this produces a degeneracy, we may safely ignore it. Since $l_n\neq 0\forall n$, we can divide each equation by $l_n$. Let $\tau_n(t)=l_nF_n(t)$. The system of equations becomes
 	\begin{eqnarray*}
-	\sum_{i=n}^N m_i\left[g \sin{\theta_n} + \sum_{j=1}^il_j\left[ \ddot{\theta}_j\cos(\theta_n-\theta_j)+\dot{\theta}_j^2 \sin(\theta_n-\theta_j) \right]     \right]=F(t)\delta_{1n}\qq{for}n=1,2,\dots N
+	\sum_{i=n}^N m_i\left[g \sin{\theta_n} + \sum_{j=1}^il_j\left[ \ddot{\theta}_j\cos(\theta_n-\theta_j)+\dot{\theta}_j^2 \sin(\theta_n-\theta_j) \right]     \right]=F_n(t)\qq{for}n=1,2,\dots N
 	\end{eqnarray*}
 	
 	This has been checked manually for $N=1$ and $N=2$.
@@ -144,10 +144,10 @@
 	Collecting terms in our equations of motion:
 	
 	\begin{eqnarray*}
-	\sum_{i=a}^N m_i\left[\sum_{j=1}^il_j\ddot{\theta}_j\cos(\theta_a-\theta_j) \right]=F(t)\delta_{1a}-\sum_{i=a}^N m_i\left[g \sin{\theta_a} + \sum_{j=1}^il_j \dot{\theta}_j^2 \sin(\theta_a-\theta_j) \right] = S_a
+	\sum_{i=a}^N m_i\left[\sum_{j=1}^il_j\ddot{\theta}_j\cos(\theta_a-\theta_j) \right]=F_a(t)-\sum_{i=a}^N m_i\left[g \sin{\theta_a} + \sum_{j=1}^il_j \dot{\theta}_j^2 \sin(\theta_a-\theta_j) \right] = S_a
 	\end{eqnarray*}
 	from which we have
-	$$S_a = F(t)\delta_{1a}-\sum_{i=a}^N m_i\left[g \sin{\theta_a} + \sum_{j=1}^il_j \dot{\theta}_j^2 \sin(\theta_a-\theta_j) \right]$$
+	$$S_a = F_a(t)-\sum_{i=a}^N m_i\left[g \sin{\theta_a} + \sum_{j=1}^il_j \dot{\theta}_j^2 \sin(\theta_a-\theta_j) \right]$$
 	Let's take a look at the sum
 	$$\sum_{i=a}^N m_i\left[\sum_{j=1}^il_j\ddot{\theta}_j\cos(\theta_a-\theta_j) \right]=\sum_{i=a}^N \sum_{j=1}^i X_{ij}\qq{where} X_{ij}=m_il_j\ddot{\theta}_j\cos(\theta_a-\theta_j)$$
 	We now want to swap the order of the summation (into $j$ first, $i$ second), but we need to consider which pairs of indices $i,j$ are present in the sum. For $j<a$, $i$ ranges from $a$ to $N$. For $j\geq a$, $i$ ranges from $j$ to $N$. This allows us to rewrite the sum as
