@@ -17,31 +17,133 @@
 	$$\vec{\theta}(t)=\vec{u}e^{i\omega(\vec{u})t}$$
 	This set of constraints shall be referred to as the \textit{mode constraint}.
 	
-	\subsection{Modal frequency}
-	Every mode has its frequency. By applying the mode constraint to the Lagrangian, we reduce it to a single coordinate (let's say $\theta_1$), and its associated E-L equation is the equation of a simple harmonic oscillator:
+	\subsection{Natural modal frequency}
+	Every mode has its natural frequency, which minimizes the constraint forces. By applying the mode constraint to the Lagrangian, we reduce it to a single coordinate (let's say $\theta_1$), and its associated E-L equation is the equation of a simple harmonic oscillator:
 	$$\theta_1 \frac{g}{u_1^2}\sum_{i=1}^N l_1 u_i^2 \mu_i + \ddot{\theta}_1 \frac{1}{u_1^2}\sum_{i=1}^N m_i\left(\sum_{j=1}^i u_j l_j\right)^2=0$$
-	This recovers the expected solution in the form $\theta_1 \propto e^{i\omega(\vec{u})t}$, where
-	$$\omega(\vec{u})=\left[\frac{g\sum\limits_{i=1}^N l_i u_i^2 \mu_i}{\sum\limits_{i=1}^N m_i\left(\sum\limits_{j=1}^i u_j l_j\right)^2}\right]^\frac{1}{2}$$
-	We can verify that $\omega(c\vec{u})=\omega(\vec{u})$, hence in the mode space, points on a line passing through the origin all have constant associated frequency. Lines through the origin are isofrequenths.
+	This recovers the expected solution in the form $\theta_1 \propto e^{i\omega_0(\vec{u})t}$, where
+	$$\omega_0(\vec{u})=\left[\frac{g\sum\limits_{i=1}^N l_i u_i^2 \mu_i}{\sum\limits_{i=1}^N m_i\left(\sum\limits_{j=1}^i u_j l_j\right)^2}\right]^\frac{1}{2}$$
+	We can verify that $\omega_0(c\vec{u})=\omega(\vec{u})$, hence in the mode space, points on a line passing through the origin all have constant associated frequency. Lines through the origin are isofrequenths.
 	
-	For a normal mode $\vec{v}_n$, we can verify that $\omega(\vec{v}_n)=\omega_n$, and the function recovers the associated normal mode frequency.
+	For a normal mode $\vec{v}_n$, we can verify that $\omega_0(\vec{v}_n)=\omega_n$, and the function recovers the associated normal mode frequency.
 	
 	\subsection{Constraint forces}
 	For holonomic constraints, we have
-	$$Q_i=\dv{}{t}\left(\pdv{L}{\dot{\theta}_i}\right)-\pdv{L}{\theta_i}$$
+	$$\tau_i(t)=\dv{}{t}\left(\pdv{L}{\dot{\theta}_i}\right)-\pdv{L}{\theta_i}$$
+	We anticipate the force associated with the mode and a frequency to also be a mode with a matching frequency:
+	$$\tau_i=Q_i e^{i\omega t}$$
 	Remember that Lagrangian perturbed to 2nd order about the equilibrium:
 	$$L=\frac{1}{2}\sum\limits_{x=1}^N m_x\left(\sum_{y=1}^x \dot{\theta}_y l_y\right)^2-\frac{1}{2}g\sum_{x=1}^N l_x \theta_x^2 \mu_x$$
 	By solving the equation and utilizing $\sum\limits_{x=i}^N\sum\limits_{y=1}^x A_{xy}=\sum\limits_{y=1}^N\sum\limits_{x=\max(i,y)}^N A_{xy}$ we obtain
-	$$Q_i = l_i\left[ g\theta_i\mu_i + \sum_{x=1}^N \ddot{\theta}_x l_x \mu_{\max(i,x)} \right]$$
+	$$\tau_i = l_i\left[ g\theta_i\mu_i + \sum_{x=1}^N \ddot{\theta}_x l_x \mu_{\max(i,x)} \right]$$
 	Now we substitute in the mode constraint and recover
-	$$Q_i(\vec{u}) = l_i e^{i\omega(\vec{u})t}\left[ g u_i\mu_i - \sum_{x=1}^N \omega(\vec{u})^2 u_x l_x \mu_{\max(i,x)} \right]$$
+	$$\tau_i(\omega, \vec{u}) = l_i e^{i\omega t}\left[ g u_i\mu_i - \omega^2 \sum_{x=1}^N u_x l_x \mu_{\max(i,x)} \right]$$
+	from which we recover the force mode
+	$$Q_i(\omega, \vec{u}) = l_i \left[ g u_i\mu_i - \omega^2 \sum_{x=1}^N  u_x l_x \mu_{\max(i,x)} \right]$$
 	We can verify that for a normal mode $\vec{v}_n$, the constraint forces vanish: $Q_i(\vec{v}_n)=0$. This recovers the original E-L equations and is therefore consistent with their solutions.
 	
-	\subsection{Gradient of constraint forces}
-	The gradient of the $i$-th constraint force is a vector such that
-	$$\grad Q_i(\vec{u})=\mqty(\pdv{Q_i}{u_1} \\ \pdv{Q_i}{u_2} \\ \vdots \\ \pdv{Q_i}{u_N})$$
+	\subsection{Mode gradient of constraint forces}
+	The mode gradient of the $i$-th constraint force is a vector such that
+	$$\grad_u Q_i(\vec{u})=\mqty*(\pdv{Q_i}{u_1} \\[5pt] \pdv{Q_i}{u_2} \\ \vdots \\ \pdv{Q_i}{u_N})$$
 	We can see that
 	$$\pdv{Q_i}{u_j}= l_i\left( g\mu_i\delta_{ij} - \omega(\vec{u})^2  l_j \mu_{\max(i,j)} \right)$$
-	We see that all dependence on $c$ vanishes (since $\omega(c\vec{v}_n)=\omega(\vec{v}_n)$), hence \textbf{the gradient will be constant on the isofrequenth} (that makes great sense from the perspective of physical interpretation of modes - we require scale symmetry).
+	We see that all dependence on $c$ vanishes (since $\omega(c\vec{v}_n)=\omega(\vec{v}_n)$), hence \textbf{the mode gradient will be constant on the isofrequenth} (that makes great sense from the perspective of physical interpretation of modes - we require scale symmetry).
+	
+	\section{Frequency-mode Space}
+	Frequency-mode space is an extension of mode space, where a vector $\vec{s}$ is defined as
+	$$\vec{s}=\mqty(\omega \\ \vec{u})=\mqty*(\omega \\ u_1 \\ u_2 \\ \vdots \\ u_N)$$
+	It is a $\mathbb{R}^{N+1}$ space.
+	
+	The normal modes in this space are defined as
+	$$\vec{w}_n=\mqty(\omega_n \\ \vec{v}_n)$$
+	
+	We can also redefine the constraint force vector field as
+	$$\vec{Q}(\omega, \vec{u})=\vec{Q}(\vec{s})\qq{where}s_\omega = \omega, \vec{s}_{\vec{u}}=\vec{u}$$
+	
+	To preserve the scaling properties of $\omega_0$ and $\vec{Q}$, we define a scalar multiple of a frequency-mode vector such that its associated frequency stays invariant:
+	$$c\vec{s}=\mqty(\omega \\ c\vec{u})\qq{for}c\neq 0$$
+	
+	\subsection{Gradient of constraint forces}
+	The full gradient of the $i$-th constraint force takes into account the dependence on $\omega$ as well:
+	$$\grad Q_i(\vec{s})=\mqty(\pdv{Q_i}{\omega} \\[5pt] \grad_u Q_i)=\mqty*(\pdv{Q_i}{\omega} \\[5pt] \pdv{Q_i}{u_1} \\[5pt] \pdv{Q_i}{u_2} \\ \vdots \\ \pdv{Q_i}{u_N})$$
+	We see that
+	$$\pdv{Q_i}{\omega} = -2l_i \omega \sum_{x=1}^N  u_x l_x \mu_{\max(i,x)}$$
+	
+	\subsection{Perturbation in frequency-mode space}
+	We have
+	$\vec{Q}(\vec{w}_n)=0$
+	Hence, in the vicinity of normal modes, we can do a first-order approximation:
+	$$Q_i(c\vec{w}_n + \delta \vec{s})=\delta \vec{s}\cdot \grad Q_i(c\vec{w}_n)$$
+	We now define a matrix $P_{(N)\cross (N+1)}$ so that its $i$-th row is the $\grad Q_i$ vector:
+	$$P_{ij}(\vec{s})=\begin{cases}
+   
+    \pdv{Q_i}{\omega}()(\vec{s}) & j = 1 \\[5pt]
+     
+    \pdv{Q_i}{u_{j-1}}()(\vec{s}) & \mbox{otherwise}
+   
+  \end{cases}$$
+  
+  Then we see that
+  $$P(c\vec{w})\delta\vec{s} = \mqty*(\delta \vec{s}\cdot \grad Q_1(c\vec{w}_n) \\[5pt] \delta \vec{s}\cdot \grad Q_2(c\vec{w}_n) \\ \vdots \\ \delta \vec{s}\cdot \grad Q_N(c\vec{w}_n))=\vec{Q}(c\vec{w}+\delta\vec{s})$$
+  
+  It shall also be useful to define a reduced square matrix $P_{(N)\cross (N)}^*$, which only encompasses the mode gradients of constraint forces:
+  $$P_{ij}^u = P_{i(j+1)}$$
+  
+  \subsection{Linear dependence and reduced matrices}
+  Since we can scale the position along the normal mode in mode space using $c$, we can define $\delta\vec{u}$ to be perpendicular to $\vec{v}_n$ without losing a single degree of freedom. This allows us to express $\delta u_N$ as a function of $\vec{v}_n$ and $\delta u_i$, where $i=1, 2\dots N-1$:
+  \begin{eqnarray}
+  \delta\vec{u}\cdot \vec{v}_n &=& 0\\
+  \sum_{i=1}^N \delta u_i v_{ni} &=&0\\
+  \delta u_N v_{nN} + \sum_{i=1}^{N-1} \delta u_i v_{ni} &=& 0\\
+  \delta u_N &=& -\frac{1}{v_{nN}} \sum_{i=1}^{N-1} \delta u_i v_{ni}\\
+  \delta u_N &=& \sum_{i=1}^{N-1} d_i \delta u_i\qq{where} d_i = -\frac{v_{ni}}{v_{nN}}
+  \end{eqnarray}
+  Similarly, since $\vec{Q}(c\vec{v}_n)=0$, we have
+  $$\grad Q_i(c\vec{v}_n) \perp \vec{v}_n$$
+  Since there's $N$ force gradients spanning $N-1$ dimensions, these vectors must be linearly dependent (equivalently: $P^u$ is singular). We can find the linear dependence between the columns of $P^u$, which we define like so:
+  $$\vec{p}_j^u = \mqty*( \pdv{Q_1}{u_j} \\[5pt] \pdv{Q_2}{u_j} \\ \vdots \\ \pdv{Q_{N-1}}{u_j}) = \pdv{\vec{Q}}{u_j}$$
+  (We can omit the bottom row of $P^u$ from the calculation of linear dependence, since the transpose of a singular matrix is also singular).
+  
+  Then, from the linear dependence, we have:
+  $$\vec{p}_N^u=\sum_{j=1}^{N-1} c_j \vec{p}_j^u$$
+  
+  We can write this in matrix form, if we define a reduced square matrix $P_{(N-1)\cross (N-1)}^*$ as
+  $$P_{ij}^*=P_{ij}^u=P_{i(j+1)}$$
+  The equation then becomes
+  $$P^* \vec{c} = \vec{p}_N^u$$
+  The solution to this equation is
+  $$\vec{c} = (P^*)^{-1} \vec{p}_N^u$$
+  This is not a directly useful result, but provides insight into the nature of $P$.
+  
+  \subsection{Finding the displacement for a general force mode}
+  
+  Consider now the reduced displacement
+  $$\delta \vec{s}^*=\mqty*(\delta \omega \\ \delta u_1 \\ \delta u_2 \\ \vdots \\ \delta u_{N-1})$$
+  
+  and a matrix $R_{(N)\cross (N)}$ defined like so:
+  
+  $$R_{ij}(\vec{s}) = \begin{cases}
+  
+	\pdv{Q_i}{\omega}()(\vec{s}) & j = 1 \\[5pt]
+     
+    \pdv{Q_i}{u_{j-1}}()(\vec{s}) + d_{j-1} \pdv{Q_i}{u_N}()(\vec{s}) & \mbox{otherwise}
+  
+  \end{cases}$$
+  
+  Multiplying the matrix $R$ with the reduced displacement $\delta \vec{s}^*$, we obtain a vector $\vec{\gamma}$, whose $i$-th element is equal to
+  \begin{eqnarray*}
+  \gamma_i&=&\delta \omega\pdv{Q_i}{\omega} + \sum_{j = 2}^N \delta u_{j-1} \left( \pdv{Q_i}{u_{j-1}} + d_{j-1} \pdv{Q_i}{u_N} \right)\\
+  &=&\delta \omega\pdv{Q_i}{\omega} + \sum_{j = 1}^{N-1} \delta u_j \left( \pdv{Q_i}{u_j} + d_j \pdv{Q_i}{u_N} \right)\\
+  &=&\delta \omega\pdv{Q_i}{\omega} + \sum_{j = 1}^{N-1} \delta u_j \pdv{Q_i}{u_j} + \sum_{j = 1}^{N-1} \delta u_j d_j \pdv{Q_i}{u_N}\\
+  &=&\delta \omega\pdv{Q_i}{\omega} + \sum_{j = 1}^{N-1} \delta u_j \pdv{Q_i}{u_j} + \pdv{Q_i}{u_N} \sum_{j = 1}^{N-1} d_j  \delta u_j\\
+  &=&\delta \omega\pdv{Q_i}{\omega} + \sum_{j = 1}^{N-1} \delta u_j \pdv{Q_i}{u_j} + \pdv{Q_i}{u_N} \delta u_N\\
+  &=&\delta \omega\pdv{Q_i}{\omega} + \sum_{j = 1}^{N} \delta u_j \pdv{Q_i}{u_j}\\
+  &=& \delta \vec{s}\cdot \grad{Q_i}\\
+  &=& Q_i(c\vec{w}_n + \delta\vec{s})
+  \end{eqnarray*}
+  Hence $\vec{\gamma} \equiv \vec{Q}(c\vec{w}_n + \delta\vec{s})$, and we can now find the reduced displacement like so:
+  \begin{eqnarray*}
+  R\delta \vec{s}^* &=& \vec{Q}(c\vec{w}_n + \delta\vec{s})\\
+  \delta \vec{s}^* &=& R^{-1} \vec{Q}(c\vec{w}_n + \delta\vec{s})
+  \end{eqnarray*}
 	
 \end{document}

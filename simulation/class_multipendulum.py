@@ -380,13 +380,16 @@ class multipendulum(physical_system):
             b += self.m[i] * c * c
         return(np.sqrt(self.g * a / b))
     
-    def get_constraint_forces(self, mode):
+    def get_constraint_forces(self, mode, omega = -1):
         
         if inner_product(mode, mode) == 0.0:
             return(mode.copy())
         
         # returns vec(Q) as a function of mode
-        mode_freq = self.modal_frequency(mode)
+        if omega == -1:
+            mode_freq = self.modal_frequency(mode)
+        else:
+            mode_freq = omega
         Q_res = []
         for i in range(self.N):
             cur_Q = self.g * mode[i] * self.get_mu(i)
@@ -408,23 +411,105 @@ class multipendulum(physical_system):
                     P[i].append(- self.l[i] * cur_modal_freq * cur_modal_freq * self.l[j] * self.get_mu(i, j) )
         return(P)
     
+    def get_Q_gradient_omega_matrix(self, mode):
+        res = np.zeros((self.N, self.N+1))
+        omega = self.modal_frequency(mode)
+        for i in range(self.N):
+            res[i][0] = self.get_dQ_domega(omega, mode, i)
+            for j in range(self.N):
+                res[i][j+1] = self.get_P_element(mode, i, j)
+        return(res)
+    
     def get_P_element(self, mode, i, j):
-        ass_freq = self.modal_frequency(mode)
+        # the matrix where i-th row is the mode gradient of Q_i
+        ass_freq = self.modal_frequency(mode) # we use the natural frequency here
         res = - ass_freq * ass_freq * self.l[j] * self.get_mu(i, j)
         if i == j:
             res += self.g * self.get_mu(i)
         return(self.l[i] * res)
     
+    def get_alpha_element(self, mode, c_vec, i):
+        # helping function for get_R_element
+        res = 0.0
+        for j in range(self.N-1):
+            res += self.get_P_element(mode, i, j) * c_vec[j]
+        return(res)
+    
+    def get_dQ_domega(self, omega, mode, i):
+        # returns dQ_i/d omega
+        res = 0.0
+        for x in range(self.N):
+            res -= 2.0 * self.l[i] * omega * mode[x] * self.l[x] * self.get_mu(i, x)
+        return(res)
+    
+    def get_R_element(self, mode, c_vec, d_vec, i, j):
+        # the matrix where i-th row is the mode gradient of Q_i
+        
+        # omega, mode are associated with the mode which you perturb
+        # c_vec is the (N-) dim. linear dependence coef. vector in P_ij
+        # d_vec is the (N-1) dim. coef. vector associated with the direction of the perturbation
+        
+        omega = self.modal_frequency(mode)
+        
+        if j == 0:
+            return(self.get_dQ_domega(omega, mode, i))
+        else:
+            return(self.get_P_element(mode, i, j-1) + d_vec[j-1] * self.get_P_element(mode, i, self.N-1))
+            #return(self.get_P_element(mode, i, j-1) + d_vec[j-1] * self.get_alpha_element(mode, c_vec, i))
+    
     def get_corrected_resonant_frequencies(self, force_mode):
         cur_corrected_resonant_frequencies = []
-        """for n in range(len(self.normal_mode_frequencies)):
+        
+        
+        for n in range(len(self.normal_mode_frequencies)):
+            try:
+                print(" DELTA S = ", delta_s)
+            except UnboundLocalError:
+                print("No delta_s yet")
+            cur_natural_frequency = self.normal_mode_frequencies[n]
             cur_mode = self.normal_modes[n]
-            P = np.empty((self.N, self.N))
+            P = np.zeros((self.N, self.N))
             for i in range(self.N):
                 for j in range(self.N):
                     P[i][j] = self.get_P_element(cur_mode, i, j)
-            print(P)
+            #print(P)
             
+            c_vec = decompose_last_column_of_singular_matrix(P)
+            #print(c_vec)
+            # c_vec works!
+            
+            d_vec = np.zeros(self.N-1)
+            for i in range(self.N-1):
+                d_vec[i] = - cur_mode[i] / cur_mode[self.N-1]
+            # d_vec works!!
+            
+            R = np.zeros((self.N, self.N))
+            for i in range(self.N):
+                for j in range(self.N):
+                    R[i][j] = self.get_R_element(cur_mode, c_vec, d_vec, i, j)
+            #print(R)
+            
+            R_inv = np.linalg.inv(R)
+            
+            delta_s_raw = matrix_operator(R_inv, force_mode)
+            delta_s = np.zeros(self.N+1)
+            delta_s[0] = delta_s_raw[0]
+            for i in range(self.N-1):
+                delta_s[i+1] = delta_s_raw[i+1]
+                delta_s[self.N] += d_vec[i] * delta_s_raw[i+1]
+            
+            print("Displaced frequency =", cur_natural_frequency + delta_s[0])
+            
+            # test whether Q is recovered
+            displacement_mode = np.zeros(self.N)
+            for i in range(self.N-1):
+                displacement_mode[i] = delta_s[i+1]
+                displacement_mode[self.N-1] += d_vec[i] * displacement_mode[i]
+            print("Displacement =", displacement_mode, inner_product(displacement_mode, cur_mode))
+            print("New constraint force =", self.get_constraint_forces(vector_sum(cur_mode, displacement_mode), cur_natural_frequency + delta_s[0]))
+            # this doesn't work...
+            
+            """
             print("GRAM SCHMIDT")
             zero_force_span = gram_schmidt(P[1:])
             print(zero_force_span)
@@ -439,10 +524,15 @@ class multipendulum(physical_system):
             
             new_u = vector_sum(cur_mode, scalar_product(delta_u, delta_u_coef))
             
-
-            cur_corrected_resonant_frequencies.append(self.modal_frequency(new_u))"""
+            P_inv = np.linalg.inv(P)
+            new_u = cur_mode.copy()
+            for i in range(self.N):
+                new_u[i] += torque * P_inv[i][0]
+            cur_corrected_resonant_frequencies.append(self.modal_frequency(new_u))
+            """
         
         self.corrected_resonant_frequencies = cur_corrected_resonant_frequencies
+        
     
     def print_normal_modes(self):
         

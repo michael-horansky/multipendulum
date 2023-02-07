@@ -163,10 +163,11 @@ def triple_pendulum_mode_perturbation(triple_pendulum, force_magnitude, omega_ra
         print("-----------------------------------------------")
 
 
-
+p3_small.modal_analysis()
+p3_small.get_corrected_resonant_frequencies([2.5, 0.0, 0.5])
 
 #double_pendulum_mode_perturbation(p2_small, 2.5, analyze = False)
-double_pendulum_force_matching_mode(p2_small, 2.5, analyze = False)
+#double_pendulum_force_matching_mode(p2_small, 2.5, analyze = False)
 #triple_pendulum_mode_perturbation(p3_small, 2.5, analyze=False)
 
 """
