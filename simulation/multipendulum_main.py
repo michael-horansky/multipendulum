@@ -163,12 +163,43 @@ def triple_pendulum_mode_perturbation(triple_pendulum, force_magnitude, omega_ra
         print("-----------------------------------------------")
 
 
+"""dp_analyzer = analyzer(0.05, 1.0, 2.5, "3p_freq-mode_displacement")
+dp_analyzer.add_pendulum(p3_small, "p3-small")
+#dp_analyzer.add_pendulum(p3_big, "p3-big")
+my_force_mode = [2.5, 0.0, 0.0]
+dp_analyzer.driving_frequency_analysis(driving_frequency_range=(0.6, 4.2), force_mode = my_force_mode, datapoints=200, t_max = 500.0, t_threshold = 100.0)
+dp_analyzer.save_resonance_analysis_data()
+
+p3_small.get_corrected_resonant_frequencies(my_force_mode, scale = 10.0)
+#p3_big.get_corrected_resonant_frequencies(my_force_mode, scale = 10.0)
+dp_analyzer.plot_resonance_analysis_data(mech_resonance_analysis_preset, reference_frequencies=p3_small.corrected_resonant_frequencies, reference_frequencies_label='corrected f.')
+"""
+
+"""
+# TESTING whether corrected freq are scale invariant
+c_space = np.linspace(-5.0, 5.1, 503)
+omega_lists = [[], [], []]
 p3_small.modal_analysis()
-p3_small.get_corrected_resonant_frequencies([2.5, 0.0, 0.5])
+for c in c_space:
+    cur_omega = p3_small.get_corrected_resonant_frequencies([2.5, 0.0, 0.5], c)
+    for i in range(p3_small.N):
+        omega_lists[i].append(cur_omega[i])
+
+plt.xlabel('c')
+plt.ylabel('$\\omega$ [rad.s$^{{-1}}$]')
+plt.ylim((-0.1, 4.7))
+plots = []
+for i in range(p3_small.N):
+    plots.append(plt.plot(c_space, omega_lists[i], label = f'$\\omega_{i+1} + \\delta s_{{\\omega}}(c\\vec{{w}})$'))
+    plt.axhline(y=p3_small.normal_mode_frequencies[i], linestyle='dotted', label = f'$\\omega_{i+1}$', color = plots[i][0].get_color())
+plt.legend()
+plt.tight_layout()
+plt.show()"""
 
 #double_pendulum_mode_perturbation(p2_small, 2.5, analyze = False)
 #double_pendulum_force_matching_mode(p2_small, 2.5, analyze = False)
 #triple_pendulum_mode_perturbation(p3_small, 2.5, analyze=False)
+p3_small.tp_plot_mode_portrait()
 
 """
 

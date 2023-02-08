@@ -457,17 +457,12 @@ class multipendulum(physical_system):
             return(self.get_P_element(mode, i, j-1) + d_vec[j-1] * self.get_P_element(mode, i, self.N-1))
             #return(self.get_P_element(mode, i, j-1) + d_vec[j-1] * self.get_alpha_element(mode, c_vec, i))
     
-    def get_corrected_resonant_frequencies(self, force_mode):
+    def get_corrected_resonant_frequencies(self, force_mode, scale = 1.0):
+        
         cur_corrected_resonant_frequencies = []
-        
-        
         for n in range(len(self.normal_mode_frequencies)):
-            try:
-                print(" DELTA S = ", delta_s)
-            except UnboundLocalError:
-                print("No delta_s yet")
             cur_natural_frequency = self.normal_mode_frequencies[n]
-            cur_mode = self.normal_modes[n]
+            cur_mode = scalar_product(self.normal_modes[n], scale)
             P = np.zeros((self.N, self.N))
             for i in range(self.N):
                 for j in range(self.N):
@@ -491,47 +486,12 @@ class multipendulum(physical_system):
             
             R_inv = np.linalg.inv(R)
             
-            delta_s_raw = matrix_operator(R_inv, force_mode)
-            delta_s = np.zeros(self.N+1)
-            delta_s[0] = delta_s_raw[0]
-            for i in range(self.N-1):
-                delta_s[i+1] = delta_s_raw[i+1]
-                delta_s[self.N] += d_vec[i] * delta_s_raw[i+1]
+            delta_s = matrix_operator(R_inv, force_mode)
             
-            print("Displaced frequency =", cur_natural_frequency + delta_s[0])
-            
-            # test whether Q is recovered
-            displacement_mode = np.zeros(self.N)
-            for i in range(self.N-1):
-                displacement_mode[i] = delta_s[i+1]
-                displacement_mode[self.N-1] += d_vec[i] * displacement_mode[i]
-            print("Displacement =", displacement_mode, inner_product(displacement_mode, cur_mode))
-            print("New constraint force =", self.get_constraint_forces(vector_sum(cur_mode, displacement_mode), cur_natural_frequency + delta_s[0]))
-            # this doesn't work...
-            
-            """
-            print("GRAM SCHMIDT")
-            zero_force_span = gram_schmidt(P[1:])
-            print(zero_force_span)
-            print("LOL", inner_product(zero_force_span[0], zero_force_span[1]))
-            delta_u = P[0].copy()#perpendicularize([1]*self.N, P[1:-1])
-            print(delta_u)
-            print("delta u_0 dot grad 1 =", inner_product(P[0], delta_u))
-            
-            delta_u_coef = torque / inner_product(P[0], delta_u)
-            
-            print("Final delta_u =", scalar_product(delta_u, delta_u_coef))
-            
-            new_u = vector_sum(cur_mode, scalar_product(delta_u, delta_u_coef))
-            
-            P_inv = np.linalg.inv(P)
-            new_u = cur_mode.copy()
-            for i in range(self.N):
-                new_u[i] += torque * P_inv[i][0]
-            cur_corrected_resonant_frequencies.append(self.modal_frequency(new_u))
-            """
+            cur_corrected_resonant_frequencies.append(cur_natural_frequency + delta_s[0])
         
-        self.corrected_resonant_frequencies = cur_corrected_resonant_frequencies
+        self.corrected_resonant_frequencies = cur_corrected_resonant_frequencies.copy()
+        return(cur_corrected_resonant_frequencies)
         
     
     def print_normal_modes(self):
