@@ -85,18 +85,18 @@
   Then we see that
   $$P(c\vec{w})\delta\vec{s} = \mqty*(\delta \vec{s}\cdot \grad Q_1(c\vec{w}_n) \\[5pt] \delta \vec{s}\cdot \grad Q_2(c\vec{w}_n) \\ \vdots \\ \delta \vec{s}\cdot \grad Q_N(c\vec{w}_n))=\vec{Q}(c\vec{w}+\delta\vec{s})$$
   
-  It shall also be useful to define a reduced square matrix $P_{(N)\cross (N)}^*$, which only encompasses the mode gradients of constraint forces:
+  It shall also be useful to define a reduced square matrix $P_{(N)\cross (N)}^u$, which only encompasses the mode gradients of constraint forces:
   $$P_{ij}^u = P_{i(j+1)}$$
   
   \subsection{Linear dependence and reduced matrices}
   Since we can scale the position along the normal mode in mode space using $c$, we can define $\delta\vec{u}$ to be perpendicular to $\vec{v}_n$ without losing a single degree of freedom. This allows us to express $\delta u_N$ as a function of $\vec{v}_n$ and $\delta u_i$, where $i=1, 2\dots N-1$:
-  \begin{eqnarray}
+  \begin{eqnarray*}
   \delta\vec{u}\cdot \vec{v}_n &=& 0\\
   \sum_{i=1}^N \delta u_i v_{ni} &=&0\\
   \delta u_N v_{nN} + \sum_{i=1}^{N-1} \delta u_i v_{ni} &=& 0\\
   \delta u_N &=& -\frac{1}{v_{nN}} \sum_{i=1}^{N-1} \delta u_i v_{ni}\\
   \delta u_N &=& \sum_{i=1}^{N-1} d_i \delta u_i\qq{where} d_i = -\frac{v_{ni}}{v_{nN}}
-  \end{eqnarray}
+  \end{eqnarray*}
   Similarly, since $\vec{Q}(c\vec{v}_n)=0$, we have
   $$\grad Q_i(c\vec{v}_n) \perp \vec{v}_n$$
   Since there's $N$ force gradients spanning $N-1$ dimensions, these vectors must be linearly dependent (equivalently: $P^u$ is singular). We can find the linear dependence between the columns of $P^u$, which we define like so:
@@ -129,21 +129,64 @@
   
   \end{cases}$$
   
-  Multiplying the matrix $R$ with the reduced displacement $\delta \vec{s}^*$, we obtain a vector $\vec{\gamma}$, whose $i$-th element is equal to
+  Multiplying the matrix $R$ at $c\vec{w}_n$ with the reduced displacement $\delta \vec{s}^*$, we obtain
   \begin{eqnarray*}
-  \gamma_i&=&\delta \omega\pdv{Q_i}{\omega} + \sum_{j = 2}^N \delta u_{j-1} \left( \pdv{Q_i}{u_{j-1}} + d_{j-1} \pdv{Q_i}{u_N} \right)\\
+  \left(R(c\vec{w}_n)\delta \vec{s}^*\right)_i&=&\delta \omega\pdv{Q_i}{\omega} + \sum_{j = 2}^N \delta u_{j-1} \left( \pdv{Q_i}{u_{j-1}} + d_{j-1} \pdv{Q_i}{u_N} \right)\\
   &=&\delta \omega\pdv{Q_i}{\omega} + \sum_{j = 1}^{N-1} \delta u_j \left( \pdv{Q_i}{u_j} + d_j \pdv{Q_i}{u_N} \right)\\
   &=&\delta \omega\pdv{Q_i}{\omega} + \sum_{j = 1}^{N-1} \delta u_j \pdv{Q_i}{u_j} + \sum_{j = 1}^{N-1} \delta u_j d_j \pdv{Q_i}{u_N}\\
   &=&\delta \omega\pdv{Q_i}{\omega} + \sum_{j = 1}^{N-1} \delta u_j \pdv{Q_i}{u_j} + \pdv{Q_i}{u_N} \sum_{j = 1}^{N-1} d_j  \delta u_j\\
   &=&\delta \omega\pdv{Q_i}{\omega} + \sum_{j = 1}^{N-1} \delta u_j \pdv{Q_i}{u_j} + \pdv{Q_i}{u_N} \delta u_N\\
   &=&\delta \omega\pdv{Q_i}{\omega} + \sum_{j = 1}^{N} \delta u_j \pdv{Q_i}{u_j}\\
-  &=& \delta \vec{s}\cdot \grad{Q_i}\\
+  &=& \delta \vec{s}\cdot \grad{Q_i}(c\vec{w}_n)\\
   &=& Q_i(c\vec{w}_n + \delta\vec{s})
   \end{eqnarray*}
-  Hence $\vec{\gamma} \equiv \vec{Q}(c\vec{w}_n + \delta\vec{s})$, and we can now find the reduced displacement like so:
+  Hence $R(c\vec{w}_n)\delta \vec{s}^* = \vec{Q}(c\vec{w}_n + \delta\vec{s})$ is the desired force mode, and we can now find the reduced displacement as a function of the force mode and scale like so:
   \begin{eqnarray*}
-  R\delta \vec{s}^* &=& \vec{Q}(c\vec{w}_n + \delta\vec{s})\\
-  \delta \vec{s}^* &=& R^{-1} \vec{Q}(c\vec{w}_n + \delta\vec{s})
+  R(c\vec{w}_n)\delta \vec{s}^* &=& \vec{Q}(c\vec{w}_n + \delta\vec{s})\\
+  \delta \vec{s}^*(\vec{Q}, c) &=& R^{-1}(c\vec{w}_n) \vec{Q}
   \end{eqnarray*}
+  
+  \subsection{The dependence of the displacement on $c$}
+  We see that for a given force mode $\vec{Q}$, both the reduced displacement and the matrix $R$ are functions of $c$ (whereas $Q$ is independent of $c$):
+  $$R(c\vec{w}_n)\delta \vec{s}^*(c)=\vec{Q}$$
+  We can describe the $c$ dependence of $R$ easily: its first column scales linearly with $c$, all the other columns are invariant with $c$. We want $\delta \vec{s}^*(c)$ to satisfy the condition that $\vec{Q}$ is independent of $c$, which will shed light on the $c$ dependence of $\delta \vec{s}^*(c)$ itself:
+  $$\left(R(c\vec{w}_n)\delta \vec{s}^*(c)\right)_i=\delta \omega\pdv{Q_i}{\omega}()(c\vec{w}_n) + \sum_{j = 1}^{N} \delta u_j \pdv{Q_i}{u_j}()(c\vec{w}_n)$$
+  From the explicit forms of the force mode gradient, we can see that the partial derivatives must satisfy the following scaling relations:
+  \begin{eqnarray*}
+  \pdv{Q_i}{\omega}()(c\vec{w}_n)&=&c\pdv{Q_i}{\omega}()(\vec{w}_n)\\
+  \pdv{Q_i}{u_j}()(c\vec{w}_n)&=&\pdv{Q_i}{u_j}()(\vec{w}_n)
+  \end{eqnarray*}
+  Hence we can rewrite the matrix product as
+  $$\left(R(c\vec{w}_n)\delta \vec{s}^*\right)_i=c\delta \omega\pdv{Q_i}{\omega}()(\vec{w}_n) + \sum_{j = 1}^{N} \delta u_j \pdv{Q_i}{u_j}()(\vec{w}_n)$$
+  We can see that the only way the displacement $\delta \vec{s}$ can satisfy the fact this is independent of $c$ is to satisfy the following scaling relations on its components:
+  \begin{eqnarray*}
+  \delta \omega (c) &\propto & c^{-1}\\
+  \delta \vec{u} (c) &=& \mbox{cons.}
+  \end{eqnarray*}
+  Or, equivalently:
+  \begin{eqnarray*}
+  \delta \omega (c) &=& c^{-1}\eval{\delta \omega}_{c=1}\\
+  \delta \vec{u} (c) &=& \eval{\delta \vec{u}}_{c=1}
+  \end{eqnarray*}
+  We can therefore define a \textit{scaleless} matrix $R_{(N)\cross (N)}^c$ like so:
+  $$R^c(\vec{s}) = R\left( |\vec{s}_{\vec{u}}|^{-1} \vec{s} \right)$$
+  so that, on (not just normal mode) isofrequenths:
+  $$R^c(c\vec{w}_n)=\begin{cases}
+  
+	\frac{1}{c}\pdv{Q_i}{\omega}()(c\vec{w}_n) & j = 1 \\[5pt]
+     
+    \pdv{Q_i}{u_{j-1}}()(c\vec{w}_n) + d_{j-1} \pdv{Q_i}{u_N}()(c\vec{w}_n) & \mbox{otherwise}
+  
+  \end{cases} = \begin{cases}
+  
+	\pdv{Q_i}{\omega}()(\vec{w}_n) & j = 1 \\[5pt]
+     
+    \pdv{Q_i}{u_{j-1}}()(\vec{w}_n) + d_{j-1} \pdv{Q_i}{u_N}()(\vec{w}_n) & \mbox{otherwise}
+  
+  \end{cases}$$
+  We can see that this matrix is indeed scale-invariant: $R^c(c\vec{w}_n)=R^c(\vec{w}_n)$
+  
+  Then, the reduced displacement as a function of force mode and $c$ becomes:
+  $$\delta \vec{s}^* (\vec{Q}, c) = \mqty( c^{-1}\left(\left(R^c(\vec{w}_n)\right)^{-1} \vec{Q}\right)_\omega \\[5pt] \left(\left(R^c(\vec{w}_n)\right)^{-1} \vec{Q}\right)_{\vec{u}^*})$$
 	
 \end{document}
