@@ -12,7 +12,10 @@ What it does: simulates the trajectories; finds response curves to driven motion
 from linalg_funcs import *
 
 import numpy as np
+import time
 
+
+import matplotlib.pyplot as plt
 
 class state:
     
@@ -25,7 +28,7 @@ class state:
         self.N = len(self.q)
 
 def empty_state(N):
-    new_empty_state = state([0.0]*N, [0.0]*N)
+    new_empty_state = state(np.zeros(N), np.zeros(N))
     return(new_empty_state)
 
 
@@ -74,6 +77,10 @@ class mechanical_system:
         else:
             print("ERROR: unapplicable state (number of degrees of freedom not matching)")
     
+    def set_static_variables(self, new_static_variables):
+        
+        self.static_variables = new_static_variables.copy()
+    
     # TODO add descriptors: print static variables, current state?
     
     
@@ -86,7 +93,7 @@ class mechanical_system:
         return(T+V)
     
     def get_det_M(self):
-        my_M = self.inertia_matrix(state, static_variables)
+        my_M = self.inertia_matrix(self.state, self.static_variables)
         return(np.linalg.det(my_M))
     
     def get_S(self, external_force_vector):
@@ -99,11 +106,12 @@ class mechanical_system:
     
     def get_acceleration(self, external_force_vector):
         # M a = S
-        cur_M = self.inertia_matrix(state, static_variables)
+        cur_M = self.inertia_matrix(self.state, self.static_variables)
         cur_S = self.get_S(external_force_vector)
         
         # time complexity O(N^3), which matches that of gaussian elimination
         acceleration = np.linalg.solve(cur_M, cur_S)
+        return(acceleration)
     
     
     
@@ -151,6 +159,8 @@ class mechanical_system:
         t = 0.0
         E_avg = 0.0
         
+        self.set_to_state(empty_state(self.N))
+        
         while(t < t_max):
             cur_external_force_list = [force_function(t), force_function(t+dt/2.0), force_function(t+dt)]
             self.step(dt, cur_external_force_list)
@@ -162,6 +172,59 @@ class mechanical_system:
         E_avg /= (t_max - t_thresh)
         
         return(E_avg)
+    
+    def response_curve(self, omega_range, time_range, force_mode):
+        # omega_range = ([omega_min=0], omega_max, N)
+        # time_range = ([t_thresh = 0], t_max, dt)
+        # force_mode = (mode[N], [phase[N]=0])
+        
+        # -------------------- overloading ------------------------
+        if len(omega_range) == 2:
+            omega_min = 0.0
+            omega_max, N_datapoints = omega_range
+        elif len(omega_range) == 3:
+            omega_min, omega_max, N_datapoints = omega_range
+        else:
+            print("ERROR: omega_range shape invalid")
+            return(-1)
+        
+        if len(time_range) == 2:
+            t_thresh = 0.0
+            t_max, dt = time_range
+        elif len(time_range) == 3:
+            t_thresh, t_max, dt = time_range
+        else:
+            print("ERROR: time_range shape invalid")
+            return(-1)
+        
+        if type(force_mode[0]) != list and type(force_mode[0]) != np.ndarray:
+            force_mode_amplitude = force_mode
+            force_mode_phase     = [0]*len(force_mode_amplitude)
+        elif len(force_mode) == 2:
+            force_mode_amplitude = force_mode[0]
+            force_mode_phase     = force_mode[1]
+        else:
+            print("ERROR: force_mode shape invalid")
+            return(-1)
+        
+        # --------------------- response curve calculation --------------
+        omega_space = np.linspace(omega_min, omega_max, N_datapoints)
+        energy_space = np.zeros(omega_space.shape)
+        
+        start_time = time.time()
+        progress = 0
+            
+        for i in range(len(omega_space)):
+            
+            if np.floor(i / N_datapoints * 100) > progress:
+                progress = np.floor(i / N_datapoints * 100)
+                print(  "  Analysis in progress: " + str(progress) + "%; est. time of finish: " + time.strftime("%H:%M:%S", time.localtime( (time.time()-start_time) * 100 / progress + start_time )), end='\r')
+            
+            E_avg = self.simulate(dt, t_thresh, t_max, force_mode_function(force_mode_amplitude, omega_space[i], force_mode_phase), False)
+            energy_space[i] = E_avg
+        
+        return(omega_space, energy_space)
+        
 
 
 #------------------------------------------------------------------
@@ -191,11 +254,13 @@ def multipendulum_inertia_matrix(cur_state, static_variables):
     M = np.zeros((cur_state.N, cur_state.N))
     for a in range(cur_state.N):
         for b in range(cur_state.N):
-            M[a][b] = np.cos( cur_state.q[a] - cur_state.q[b] ) * np.sum(static_variables['m'][0:max(a,b)])#self.get_mu(a, b)
+            M[a][b] = static_variables['l'][b] * np.cos( cur_state.q[a] - cur_state.q[b] ) * np.sum(static_variables['m'][max(a,b):cur_state.N])#self.get_mu(a, b)
     return(M)
 
 def multipendulum_internal_force_vector(cur_state, static_variables):
     S = np.zeros(cur_state.N)
+    #print("q", cur_state.q)
+    #print("q_dot", cur_state.q_dot)
     for a in range(cur_state.N):
         cur_sum_i = 0.0
         for i in range(a, cur_state.N):
@@ -206,10 +271,26 @@ def multipendulum_internal_force_vector(cur_state, static_variables):
         S[a] = -cur_sum_i
     return(S)
 
+MS_p3_small_static = {'g' : 9.8, 'l' : np.array([5.0, 3.0, 3.0]), 'm' : np.array([5.0, 3.0, 3.0])}
+MS_p3_small = mechanical_system(3, MS_p3_small_static, multipendulum_energy_function, multipendulum_inertia_matrix, multipendulum_internal_force_vector)
+
+"""
+from class_multipendulum import *
 
 
+p3_small = multipendulum([5.0, 3.0, 3.0], [5.0, 3.0, 3.0], 9.8)
+
+state_q = [0.1, -0.1, 0.2]
+state_q_dot = [0.02, 0.05, -0.1]
+
+p3_small.set_state(state_q, state_q_dot)
+MS_p3_small.set_to_state(state(state_q, state_q_dot))"""
+
+response_omega, response_energy = MS_p3_small.response_curve((0.1, 4.0, 50), (20.0, 100.0, 0.01), [2.5, 2.5, 2.5])
 
 
+plt.plot(response_omega, response_energy)
+plt.show()
 
 
 
